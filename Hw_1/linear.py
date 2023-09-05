@@ -87,7 +87,7 @@ if __name__ == "__main__":
         stddev=noise_stddev)
     y = tf.math.sin(2*tf.constant(math.pi)*x) + epsilon_noisy
 
-    basisExpansion = BasisExpansion(num_inputs, num_bases)
+    basisExpansion = BasisExpansion(num_bases, num_inputs, num_outputs)
     linear = Linear(num_bases, num_outputs)
 
     num_iters = config["learning"]["num_iters"]
@@ -148,17 +148,11 @@ if __name__ == "__main__":
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    for basis in range(num_bases):
-        ax2.plot(
-            a.numpy().squeeze(),
-            basisExpansion(a)[:, basis].numpy().squeeze(),
-            "-",
-            label=f"Basis {basis}",
-        )
+    a2 = tf.linspace(-3., 3., 1000)[:, tf.newaxis]
+    ax2.plot(a2.numpy().squeeze(), basisExpansion(a2).numpy().squeeze(), "-")
 
     ax2.set_xlabel("x")
     ax2.set_ylabel("y")
     ax2.set_title("Basis functions")
-    ax2.legend()
 
     fig.savefig("artifacts/plot.pdf")
