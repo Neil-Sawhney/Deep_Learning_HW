@@ -54,8 +54,8 @@ def test_homogeneity():
 
     basisExpansion = BasisExpansion(num_bases, num_inputs, num_outputs)
 
-    a = rng.normal(shape=[1, num_inputs])
-    b = rng.normal(shape=[1, num_test_cases])
+    a = rng.normal(shape=[1, 1, num_inputs])
+    b = rng.normal(shape=[num_test_cases, 1, 1])
 
     case1 = basisExpansion(a * b)
     case2 = basisExpansion(a) * b

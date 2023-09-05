@@ -136,3 +136,7 @@ def test_bias():
 
     linear_with_bias = Linear(1, 1, bias=False)
     assert not hasattr(linear_with_bias, "b")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

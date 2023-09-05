@@ -22,6 +22,6 @@ class BasisExpansion(tf.Module):
         )
 
     def __call__(self, x):
-        z = tf.math.exp(-(x - self.mu)**2 / (self.sigma**2))
+        z = tf.exp(-(x - self.mu)**2 / (self.sigma**2))
 
         return z
