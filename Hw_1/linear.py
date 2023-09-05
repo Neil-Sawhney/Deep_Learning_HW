@@ -1,6 +1,10 @@
 #!/bin/env python
 
+import math
+
 import tensorflow as tf
+
+from basisExpansion import BasisExpansion
 
 
 class Linear(tf.Module):
@@ -27,7 +31,8 @@ class Linear(tf.Module):
                 name="Linear/b",
             )
 
-    # create the logits by multiplying the inputs by the weights + the optional bias
+    # create the logits by multiplying the inputs by the weights + the
+    # optional bias
     def __call__(self, x):
         z = x @ self.w
 
@@ -44,12 +49,10 @@ def grad_update(step_size, variables, grads):
 
 if __name__ == "__main__":
     import argparse
-
     from pathlib import Path
 
     import matplotlib.pyplot as plt
     import yaml
-
     from tqdm import trange
 
     parser = argparse.ArgumentParser(
@@ -57,7 +60,12 @@ if __name__ == "__main__":
         description="Fits a linear model to some data, given a config",
     )
 
-    parser.add_argument("-c", "--config", type=Path, default=Path("config.yaml"))
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        default=Path("config.yaml")
+        )
     args = parser.parse_args()
 
     config = yaml.safe_load(args.config.read_text())
@@ -66,19 +74,21 @@ if __name__ == "__main__":
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
     num_samples = config["data"]["num_samples"]
+    noise_stddev = config["data"]["noise_stddev"]
+    num_bases = config["model"]["num_bases"]
     num_inputs = 1
     num_outputs = 1
 
     x = rng.uniform(shape=(num_samples, num_inputs))
     w = rng.normal(shape=(num_inputs, num_outputs))
     b = rng.normal(shape=(1, num_outputs))
-    y = rng.normal(
-        shape=(num_samples, num_outputs),
-        mean=x @ w + b,
-        stddev=config["data"]["noise_stddev"],
-    )
+    epsilon_noisy = rng.normal(
+        shape=(num_samples, num_inputs),
+        stddev=noise_stddev)
+    y = tf.math.sin(2*tf.constant(math.pi)*x) + epsilon_noisy
 
-    linear = Linear(num_inputs, num_outputs)
+    basisExpansion = BasisExpansion(num_inputs, num_bases)
+    linear = Linear(num_bases, num_outputs)
 
     num_iters = config["learning"]["num_iters"]
     step_size = config["learning"]["step_size"]
@@ -97,32 +107,58 @@ if __name__ == "__main__":
             x_batch = tf.gather(x, batch_indices)
             y_batch = tf.gather(y, batch_indices)
 
-            y_hat = linear(x_batch)
+            y_hat = linear(basisExpansion(x_batch))
             loss = tf.math.reduce_mean((y_batch - y_hat) ** 2)
 
-        grads = tape.gradient(loss, linear.trainable_variables)
-        grad_update(step_size, linear.trainable_variables, grads)
+        trainables = (linear.trainable_variables
+                      + basisExpansion.trainable_variables)
+
+        grads = tape.gradient(loss, trainables)
+        grad_update(step_size, trainables, grads)
 
         step_size *= decay_rate
 
         if i % refresh_rate == (refresh_rate - 1):
             bar.set_description(
-                f"Step {i}; Loss => {loss.numpy():0.4f}, step_size => {step_size:0.4f}"
+                f"Step {i}; Loss => {loss.numpy():0.4f}, "
+                f"step_size => {step_size:0.4f}"
             )
             bar.refresh()
 
-    fig, ax = plt.subplots()
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8, 12))
 
-    ax.plot(x.numpy().squeeze(), y.numpy().squeeze(), "x")
+    ax.plot(x.numpy().squeeze(), y.numpy().squeeze(), "x", label="Inputs")
 
     a = tf.linspace(tf.reduce_min(x), tf.reduce_max(x), 100)[:, tf.newaxis]
-    ax.plot(a.numpy().squeeze(), linear(a).numpy().squeeze(), "-")
+    y_quiet = tf.math.sin(2*tf.constant(math.pi)*a)
+    ax.plot(a.numpy().squeeze(), y_quiet.numpy().squeeze(), "-", label="Clean")
+
+    ax.plot(
+        a.numpy().squeeze(),
+        linear(basisExpansion(a)).numpy().squeeze(),
+        "-",
+        label="Fit"
+    )
 
     ax.set_xlabel("x")
     ax.set_ylabel("y")
-    ax.set_title("Linear fit using SGD")
-    
+    ax.legend()
+    ax.set_title("Nonlinear fit using SGD")
+
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    fig.savefig("plot.pdf")
+    for basis in range(num_bases):
+        ax2.plot(
+            a.numpy().squeeze(),
+            basisExpansion(a)[:, basis].numpy().squeeze(),
+            "-",
+            label=f"Basis {basis}",
+        )
+
+    ax2.set_xlabel("x")
+    ax2.set_ylabel("y")
+    ax2.set_title("Basis functions")
+    ax2.legend()
+
+    fig.savefig("artifacts/plot.pdf")

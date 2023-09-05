@@ -97,7 +97,11 @@ def test_trainable(bias):
 
 @pytest.mark.parametrize(
     "a_shape, b_shape",
-    [([1000, 1000], [100, 100]), ([1000, 100], [100, 100]), ([100, 1000], [100, 100])],
+    [
+        ([1000, 1000], [100, 100]),
+        ([1000, 100], [100, 100]),
+        ([100, 1000], [100, 100])
+    ],
 )
 def test_init_properties(a_shape, b_shape):
     import tensorflow as tf
