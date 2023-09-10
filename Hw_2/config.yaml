@@ -1,4 +1,4 @@
-model:
+basis_expansion:
   num_bases: 7 
 learning:
   step_size: 0.05

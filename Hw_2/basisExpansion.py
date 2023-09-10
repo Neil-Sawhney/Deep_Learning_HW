@@ -1,59 +1,40 @@
-#!/bin/env python
-
-import math
-
 import tensorflow as tf
 
-from basisExpansion import BasisExpansion
 
-
-class Linear(tf.Module):
-    def __init__(self, num_inputs, num_outputs, bias=True):
+class BasisExpansion(tf.Module):
+    def __init__(self, num_bases, num_inputs, num_outputs):
         rng = tf.random.get_global_generator()
 
         stddev = tf.math.sqrt(2 / (num_inputs + num_outputs))
 
-        # initialize weights to random values from a normal distribution
-        self.w = tf.Variable(
-            rng.normal(shape=[num_inputs, num_outputs], stddev=stddev),
+        self.mu = tf.Variable(
+            rng.normal(shape=[num_inputs, num_bases], stddev=stddev),
             trainable=True,
-            name="Linear/w",
+            name="BasisExpansion/mu",
         )
 
-        self.bias = bias
+        self.sigma = tf.Variable(
+            rng.normal(shape=[num_inputs, num_bases], stddev=stddev),
+            trainable=True,
+            name="BasisExpansion/sigma",
+        )
 
-        if self.bias:
-            self.b = tf.Variable(
-                tf.zeros(
-                    shape=[1, num_outputs],
-                ),
-                trainable=True,
-                name="Linear/b",
-            )
-
-    # create the logits by multiplying the inputs by the weights + the
-    # optional bias
     def __call__(self, x):
-        z = x @ self.w
-
-        if self.bias:
-            z += self.b
+        z = tf.exp(-(x - self.mu)**2 / (self.sigma**2))
 
         return z
 
 
-def grad_update(step_size, variables, grads):
-    for var, grad in zip(variables, grads):
-        var.assign_sub(step_size * grad)
-
-
 if __name__ == "__main__":
     import argparse
+    from math import pi
     from pathlib import Path
 
     import matplotlib.pyplot as plt
     import yaml
     from tqdm import trange
+
+    from linear import Linear, grad_update
 
     parser = argparse.ArgumentParser(
         prog="Linear",
@@ -75,7 +56,7 @@ if __name__ == "__main__":
 
     num_samples = config["data"]["num_samples"]
     noise_stddev = config["data"]["noise_stddev"]
-    num_bases = config["model"]["num_bases"]
+    num_bases = config["basis_expansion"]["num_bases"]
     num_inputs = 1
     num_outputs = 1
 
@@ -85,7 +66,7 @@ if __name__ == "__main__":
     epsilon_noisy = rng.normal(
         shape=(num_samples, num_inputs),
         stddev=noise_stddev)
-    y = tf.math.sin(2*tf.constant(math.pi)*x) + epsilon_noisy
+    y = tf.math.sin(2*tf.constant(pi)*x) + epsilon_noisy
 
     basisExpansion = BasisExpansion(num_bases, num_inputs, num_outputs)
     linear = Linear(num_bases, num_outputs)
@@ -130,7 +111,7 @@ if __name__ == "__main__":
     ax.plot(x.numpy().squeeze(), y.numpy().squeeze(), "x", label="Inputs")
 
     a = tf.linspace(tf.reduce_min(x), tf.reduce_max(x), 100)[:, tf.newaxis]
-    y_quiet = tf.math.sin(2*tf.constant(math.pi)*a)
+    y_quiet = tf.math.sin(2*tf.constant(pi)*a)
     ax.plot(a.numpy().squeeze(), y_quiet.numpy().squeeze(), "-", label="Clean")
 
     ax.plot(
@@ -155,4 +136,4 @@ if __name__ == "__main__":
     ax2.set_ylabel("y")
     ax2.set_title("Basis functions")
 
-    fig.savefig("artifacts/plot.pdf")
+    fig.savefig("artifacts/basisExpansion.pdf")
