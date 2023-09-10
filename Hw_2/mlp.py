@@ -3,7 +3,7 @@ import tensorflow as tf
 from linear import Linear
 
 
-class MLP(tf.module):
+class MLP(tf.Module):
     def __init__(self, num_inputs, num_outputs, num_hidden_layers,
                  hidden_layer_width, hidden_activation=tf.identity,
                  output_activation=tf.identity):
@@ -13,17 +13,18 @@ class MLP(tf.module):
         self.hidden_layer_width = hidden_layer_width
         self.hidden_activation = hidden_activation
         self.output_activation = output_activation
-        self.first_linear = Linear(num_inputs, num_hidden_layers)
+        self.hidden_linear = Linear(self.hidden_layer_width,
+                                    self.hidden_layer_width)
+        self.first_linear = Linear(num_inputs, hidden_layer_width)
+        self.final_linear = Linear(self.hidden_layer_width, self.num_outputs)
 
     def __call__(self, x):
-        hidden_linear = Linear(self.hidden_layers, self.num_hidden_layers)
+        x = self.hidden_activation(self.first_linear(x))
         for i in range(self.num_hidden_layers):
             x = self.hidden_activation(
-                hidden_linear(x)
+                self.hidden_linear(x)
             )
-        final_linear = Linear(self.num_hidden_layers, self.num_outputs)
-        return self.output_activation(final_linear(self.hidden_layer_width,
-                                                   self.num_outputs)(x))
+        return self.output_activation(self.final_linear(x))
 
 
 if __name__ == "__main__":
@@ -36,6 +37,7 @@ if __name__ == "__main__":
 
     from tqdm import trange
     from linear import grad_update
+    from math import pi
 
     parser = argparse.ArgumentParser(
         prog="Multi Layer Perceptron",
@@ -56,26 +58,31 @@ if __name__ == "__main__":
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
     num_samples = config["data"]["num_samples"]
-    num_inputs = 1
+    num_inputs = 2
     num_outputs = 1
 
-    x = rng.uniform(shape=(num_samples, num_inputs))
-    w = rng.normal(shape=(num_inputs, num_outputs))
-    b = rng.normal(shape=(1, num_outputs))
-    y = rng.normal(
-        shape=(num_samples, num_outputs),
-        mean=x @ w + b,
-        stddev=config["data"]["noise_stddev"],
-    )
+    noise_stddev = config["data"]["noise_stddev"]
+    e1 = rng.normal(shape=(num_samples, 1), stddev=noise_stddev)
+    e2 = rng.normal(shape=(num_samples, 1), stddev=noise_stddev)
+    r = tf.linspace(0., 4*pi, num_samples)[:, tf.newaxis]
+
+    x1 = r*tf.math.cos(r) + e1
+    y1 = r*tf.math.sin(r) + e1
+    x2 = -r*tf.math.cos(r) + e2
+    y2 = -r*tf.math.sin(r) + e2
 
     num_hidden_layers = config["mlp"]["num_hidden_layers"]
     hidden_layer_width = config["mlp"]["hidden_layer_width"]
 
-    def hidden_activation(x):
+    def relu(x):
         return tf.maximum(x, 0)
+
+    def sigmoid(x):
+        return tf.math.sigmoid(x)
+
     # TODO: do we want an output activation?
     mlp = MLP(num_inputs, num_outputs, num_hidden_layers, hidden_layer_width,
-              hidden_activation)
+              relu, sigmoid)
 
     num_iters = config["learning"]["num_iters"]
     step_size = config["learning"]["step_size"]
@@ -88,14 +95,27 @@ if __name__ == "__main__":
 
     for i in bar:
         batch_indices = rng.uniform(
-            shape=[batch_size], maxval=num_samples, dtype=tf.int32
+            shape=[batch_size*2], maxval=num_samples*2, dtype=tf.int32
         )
         with tf.GradientTape() as tape:
-            x_batch = tf.gather(x, batch_indices)
-            y_batch = tf.gather(y, batch_indices)
+            output1 = tf.zeros((num_samples, 1))
+            output2 = tf.ones((num_samples, 1))
 
-            y_hat = mlp(x_batch)
-            loss = tf.math.reduce_mean((y_batch - y_hat) ** 2)
+            input1 = tf.concat((x1, y1), axis=1)
+            input2 = tf.concat((x2, y2), axis=1)
+
+            output_combined = tf.concat((output1, output2), axis=0)
+            input_combined = tf.concat((input1, input2), axis=0)
+
+            output_batch = tf.gather(output_combined, batch_indices)
+            input_batch = tf.gather(input_combined, batch_indices)
+
+            y_hat = mlp(input_batch)
+
+            loss = tf.math.reduce_mean(
+                -output_batch*tf.math.log(y_hat + 1e-7) -
+                (1 - output_batch)*tf.math.log(1 - y_hat + 1e-7)
+            )
 
         grads = tape.gradient(loss, mlp.trainable_variables)
         grad_update(step_size, mlp.trainable_variables, grads)
@@ -109,19 +129,27 @@ if __name__ == "__main__":
             )
             bar.refresh()
 
-    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8, 12))
+    fig, ax = plt.subplots()
 
-    ax.plot(x.numpy().squeeze(), y.numpy().squeeze(), "x", label="Inputs")
+    ax.plot(x1.numpy().squeeze(), y1.numpy().squeeze(), "x", label="Inputs")
+    ax.plot(x2.numpy().squeeze(), y2.numpy().squeeze(), "x", label="Inputs")
 
-    a = tf.linspace(tf.reduce_min(x), tf.reduce_max(x), 100)[:, tf.newaxis]
-    y_quiet = tf.math.sin(2*tf.constant(pi)*a)
-    ax.plot(a.numpy().squeeze(), y_quiet.numpy().squeeze(), "-", label="Clean")
-
+    x1_quiet = r*tf.math.cos(r)
+    y1_quiet = r*tf.math.sin(r)
     ax.plot(
-        a.numpy().squeeze(),
-        linear(basisExpansion(a)).numpy().squeeze(),
+        x1_quiet.numpy().squeeze(),
+        y1_quiet.numpy().squeeze(),
         "-",
-        label="Fit"
+        label="Clean"
+    )
+
+    x2_quiet = -r*tf.math.cos(r)
+    y2_quiet = -r*tf.math.sin(r)
+    ax.plot(
+        x2_quiet.numpy().squeeze(),
+        y2_quiet.numpy().squeeze(),
+        "-",
+        label="Clean"
     )
 
     ax.set_xlabel("x")
@@ -132,12 +160,6 @@ if __name__ == "__main__":
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    a2 = tf.linspace(-3., 3., 1000)[:, tf.newaxis]
-    ax2.plot(a2.numpy().squeeze(), basisExpansion(a2).numpy().squeeze(), "-")
+    import sklearn.inspection.DecisionBoundaryDisplay as dbd
 
-    ax2.set_xlabel("x")
-    ax2.set_ylabel("y")
-    ax2.set_title("Basis functions")
-
-    fig.savefig("artifacts/basisExpansion.pdf")
-
+    fig.savefig("artifacts/mlp.pdf")
