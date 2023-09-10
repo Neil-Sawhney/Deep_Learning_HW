@@ -3,7 +3,7 @@
 
 - Install requirements with ``` pip install -r requirements.txt ```.
 
-- Run ``` python linear.py ```.
+- Run ``` python mlp.py ```.
     - Change parameters in the ``` ./config.yaml ``` file.
 
-- View the results in ``` ./artifacts/plot.pdf ```.
+- View the results in ``` ./artifacts/mlp.pdf ```.
