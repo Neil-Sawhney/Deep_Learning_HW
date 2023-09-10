@@ -13,15 +13,17 @@ class MLP(tf.module):
         self.hidden_layer_width = hidden_layer_width
         self.hidden_activation = hidden_activation
         self.output_activation = output_activation
-        self.Linear = Linear(num_inputs, num_outputs)
+        self.first_linear = Linear(num_inputs, num_hidden_layers)
 
     def __call__(self, x):
+        hidden_linear = Linear(self.hidden_layers, self.num_hidden_layers)
         for i in range(self.num_hidden_layers):
             x = self.hidden_activation(
-                self.Linear(self.num_inputs,
-                            self.hidden_layer_width)(x)
+                hidden_linear(x)
             )
-        return self.output_activation(x)
+        final_linear = Linear(self.num_hidden_layers, self.num_outputs)
+        return self.output_activation(final_linear(self.hidden_layer_width,
+                                                   self.num_outputs)(x))
 
 
 if __name__ == "__main__":
@@ -66,7 +68,14 @@ if __name__ == "__main__":
         stddev=config["data"]["noise_stddev"],
     )
 
-    linear = Linear(num_inputs, num_outputs)
+    num_hidden_layers = config["mlp"]["num_hidden_layers"]
+    hidden_layer_width = config["mlp"]["hidden_layer_width"]
+
+    def hidden_activation(x):
+        return tf.maximum(x, 0)
+    # TODO: do we want an output activation?
+    mlp = MLP(num_inputs, num_outputs, num_hidden_layers, hidden_layer_width,
+              hidden_activation)
 
     num_iters = config["learning"]["num_iters"]
     step_size = config["learning"]["step_size"]
@@ -85,11 +94,11 @@ if __name__ == "__main__":
             x_batch = tf.gather(x, batch_indices)
             y_batch = tf.gather(y, batch_indices)
 
-            y_hat = linear(x_batch)
+            y_hat = mlp(x_batch)
             loss = tf.math.reduce_mean((y_batch - y_hat) ** 2)
 
-        grads = tape.gradient(loss, linear.trainable_variables)
-        grad_update(step_size, linear.trainable_variables, grads)
+        grads = tape.gradient(loss, mlp.trainable_variables)
+        grad_update(step_size, mlp.trainable_variables, grads)
 
         step_size *= decay_rate
 
@@ -100,18 +109,35 @@ if __name__ == "__main__":
             )
             bar.refresh()
 
-    fig, ax = plt.subplots()
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8, 12))
 
-    ax.plot(x.numpy().squeeze(), y.numpy().squeeze(), "x")
+    ax.plot(x.numpy().squeeze(), y.numpy().squeeze(), "x", label="Inputs")
 
     a = tf.linspace(tf.reduce_min(x), tf.reduce_max(x), 100)[:, tf.newaxis]
-    ax.plot(a.numpy().squeeze(), linear(a).numpy().squeeze(), "-")
+    y_quiet = tf.math.sin(2*tf.constant(pi)*a)
+    ax.plot(a.numpy().squeeze(), y_quiet.numpy().squeeze(), "-", label="Clean")
+
+    ax.plot(
+        a.numpy().squeeze(),
+        linear(basisExpansion(a)).numpy().squeeze(),
+        "-",
+        label="Fit"
+    )
 
     ax.set_xlabel("x")
     ax.set_ylabel("y")
-    ax.set_title("Linear fit using SGD")
-    
+    ax.legend()
+    ax.set_title("Nonlinear fit using SGD")
+
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    fig.savefig("./artifacts/linear.pdf")
+    a2 = tf.linspace(-3., 3., 1000)[:, tf.newaxis]
+    ax2.plot(a2.numpy().squeeze(), basisExpansion(a2).numpy().squeeze(), "-")
+
+    ax2.set_xlabel("x")
+    ax2.set_ylabel("y")
+    ax2.set_title("Basis functions")
+
+    fig.savefig("artifacts/basisExpansion.pdf")
+
