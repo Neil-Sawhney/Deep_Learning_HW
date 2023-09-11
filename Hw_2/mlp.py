@@ -64,12 +64,12 @@ if __name__ == "__main__":
     noise_stddev = config["data"]["noise_stddev"]
     e1 = rng.normal(shape=(num_samples, 1), stddev=noise_stddev)
     e2 = rng.normal(shape=(num_samples, 1), stddev=noise_stddev)
-    r = tf.linspace(0., 4*pi, num_samples)[:, tf.newaxis]
+    r = tf.linspace(pi/4, 4*pi, num_samples)[:, tf.newaxis]
 
-    x1 = r*tf.math.cos(r) + e1
-    y1 = r*tf.math.sin(r) + e1
-    x2 = -r*tf.math.cos(r) + e2
-    y2 = -r*tf.math.sin(r) + e2
+    x1 = (r + e1)*tf.math.cos(r)
+    y1 = (r + e1)*tf.math.sin(r)
+    x2 = -(r + e2)*tf.math.cos(r)
+    y2 = -(r + e2)*tf.math.sin(r)
 
     num_hidden_layers = config["mlp"]["num_hidden_layers"]
     hidden_layer_width = config["mlp"]["hidden_layer_width"]
@@ -80,7 +80,6 @@ if __name__ == "__main__":
     def sigmoid(x):
         return tf.math.sigmoid(x)
 
-    # TODO: do we want an output activation?
     mlp = MLP(num_inputs, num_outputs, num_hidden_layers, hidden_layer_width,
               relu, sigmoid)
 
@@ -90,6 +89,8 @@ if __name__ == "__main__":
     batch_size = config["learning"]["batch_size"]
 
     refresh_rate = config["display"]["refresh_rate"]
+
+    l2_scale = config["learning"]["l2_scale"]
 
     bar = trange(num_iters)
 
@@ -112,10 +113,14 @@ if __name__ == "__main__":
 
             y_hat = mlp(input_batch)
 
+            weightTensor = tf.concat([tf.reshape(weight, [-1]) for weight in mlp.trainable_variables if weight.name == "Linear/w:0"], axis=0)
+
+            l2_norm = tf.norm(weightTensor, ord=2)
             loss = tf.math.reduce_mean(
                 -output_batch*tf.math.log(y_hat + 1e-7) -
                 (1 - output_batch)*tf.math.log(1 - y_hat + 1e-7)
-            )
+            ) + l2_scale*l2_norm
+            test = 1
 
         grads = tape.gradient(loss, mlp.trainable_variables)
         grad_update(step_size, mlp.trainable_variables, grads)
@@ -160,6 +165,19 @@ if __name__ == "__main__":
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    import sklearn.inspection.DecisionBoundaryDisplay as dbd
+    import numpy as np
+    from sklearn.inspection import DecisionBoundaryDisplay
+    xx, yy = np.meshgrid(
+        np.linspace(-15., 15., 100),
+        np.linspace(-15., 15., 100)
+    )
+
+    input_grid = tf.stack(tf.convert_to_tensor((xx.ravel(), yy.ravel()),
+                                               dtype=tf.float32), axis=1,)
+    zz = mlp(input_grid)
+    zz = zz.numpy().reshape(xx.shape)
+
+    dbd = DecisionBoundaryDisplay(xx0=xx, xx1=yy, response=zz)
+    dbd.plot(ax=ax, cmap="RdBu", alpha=0.9)
 
     fig.savefig("artifacts/mlp.pdf")
