@@ -29,15 +29,14 @@ class MLP(tf.Module):
 
 if __name__ == "__main__":
     import argparse
-
+    from math import pi
     from pathlib import Path
 
     import matplotlib.pyplot as plt
     import yaml
-
     from tqdm import trange
+
     from linear import grad_update
-    from math import pi
 
     parser = argparse.ArgumentParser(
         prog="Multi Layer Perceptron",
@@ -113,14 +112,15 @@ if __name__ == "__main__":
 
             y_hat = mlp(input_batch)
 
-            weightTensor = tf.concat([tf.reshape(weight, [-1]) for weight in mlp.trainable_variables if weight.name == "Linear/w:0"], axis=0)
+            weightTensor = tf.concat([tf.reshape(weight, [-1]) for weight in
+                                      mlp.trainable_variables if weight.name ==
+                                      "Linear/w:0"], axis=0)
 
             l2_norm = tf.norm(weightTensor, ord=2)
             loss = tf.math.reduce_mean(
                 -output_batch*tf.math.log(y_hat + 1e-7) -
                 (1 - output_batch)*tf.math.log(1 - y_hat + 1e-7)
             ) + l2_scale*l2_norm
-            test = 1
 
         grads = tape.gradient(loss, mlp.trainable_variables)
         grad_update(step_size, mlp.trainable_variables, grads)
