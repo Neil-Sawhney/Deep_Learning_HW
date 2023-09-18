@@ -160,7 +160,7 @@ if __name__ == "__main__":
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.legend()
-    ax.set_title("Nonlinear fit using SGD")
+    ax.set_title("Spiral Classification with Multi Layer Perceptron")
 
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
