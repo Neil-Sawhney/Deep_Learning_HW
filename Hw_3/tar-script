@@ -1,0 +1,3 @@
+echo "#### CREATING TAR FILE ####"
+tar cvf sawhney-neil-2023-hw2.tar  ./linear.py ./mlp.py ./main.py ./README.md ./requirements.txt ./config.yaml ./tests/mlp_tests.py ./tests/linear_tests.py ./dataset/t10k-images-idx3-ubyte ./dataset/t10k-labels-idx1-ubyte ./dataset/train-images-idx3-ubyte ./dataset/train-labels-idx1-ubyte
+echo "#### TAR FILE CREATED ####"
