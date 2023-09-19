@@ -9,10 +9,10 @@ def test_dimensionality():
     test_labels = load_idx_data("data/t10k-labels-idx1-ubyte")
     test_images = load_idx_data("data/t10k-images-idx3-ubyte")
 
-    assert train_images.shape == (60000, 28, 28)
-    assert train_labels.shape == (60000,)
-    assert test_images.shape == (10000, 28, 28)
-    assert test_labels.shape == (10000,)
+    assert train_images.shape == (60000, 28, 28, 1)
+    assert train_labels.shape == (60000, 1)
+    assert test_images.shape == (10000, 28, 28, 1)
+    assert test_labels.shape == (10000, 1)
 
 
 if __name__ == "__main__":

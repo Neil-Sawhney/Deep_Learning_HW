@@ -12,4 +12,5 @@ def load_idx_data(filename: str,):
         tf.tensor: The tensor containing the data from the idx file
     """
     idx2numpy.convert_from_file(filename)
-    return tf.convert_to_tensor(idx2numpy.convert_from_file(filename))
+    numpy_data = idx2numpy.convert_from_file(filename)
+    return tf.convert_to_tensor(numpy_data)[..., tf.newaxis]

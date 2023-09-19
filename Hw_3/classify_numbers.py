@@ -27,12 +27,18 @@ config = yaml.safe_load(args.config.read_text())
 rng = tf.random.get_global_generator()
 rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-train_images = load_idx_data("data/train-images-idx3-ubyte")[:-10000]
-train_labels = load_idx_data("data/train-labels-idx1-ubyte")[:-10000]
-val_images = load_idx_data("data/train-images-idx3-ubyte")[-10000:]
-val_labels = load_idx_data("data/train-labels-idx1-ubyte")[-10000:]
-test_images = load_idx_data("data/t10k-images-idx3-ubyte")
-test_labels = load_idx_data("data/t10k-labels-idx1-ubyte")
+train_images = tf.cast(load_idx_data("data/train-images-idx3-ubyte")[:-10000],
+                       tf.float32)
+train_labels = tf.cast(load_idx_data("data/train-labels-idx1-ubyte")[:-10000],
+                       tf.int32)
+val_images = tf.cast(load_idx_data("data/train-images-idx3-ubyte")[-10000:],
+                     tf.float32)
+val_labels = tf.cast(load_idx_data("data/train-labels-idx1-ubyte")[-10000:],
+                     tf.int32)
+test_images = tf.cast(load_idx_data("data/t10k-images-idx3-ubyte"),
+                      tf.float32)
+test_labels = tf.cast(load_idx_data("data/t10k-labels-idx1-ubyte"),
+                      tf.int32)
 
 input_depth = 1
 layer_depths = config["cnn"]["layer_depths"]
@@ -57,12 +63,12 @@ bar = trange(num_iters)
 
 for i in bar:
     with tf.GradientTape() as tape:
-        kernel_weights = []
-        for layer in classifier.conv_layers:
-            kernel_weights.append(layer.kernel)
+        kernel_weights = tf.concat([tf.reshape(layer.kernel, [-1])
+                                    for layer in classifier.conv_layers],
+                                   axis=0)
         l2_loss = tf.nn.l2_loss(kernel_weights)
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels=train_labels,
+            labels=tf.squeeze(train_labels),
             logits=classifier(train_images)
         )) + l2_scale * l2_loss
 
