@@ -5,7 +5,7 @@ class Conv2D(tf.Module):
     def __init__(self,
                  input_channels: int,
                  output_channels: int,
-                 kernel_shape: int,):
+                 kernel_shape: tuple[int, int],):
         """Initializes the Conv2D class
 
         Args:
@@ -13,8 +13,8 @@ class Conv2D(tf.Module):
                 e.g. for the first layer this is 3 for RGB images,
                 1 for grayscale images
             output_channels (int): How many filters the convolution should have
-            kernel_shape (int): Uses a filter of size
-             kernel_shape x kernel_shape
+            kernel_shape tuple[int, int]: Uses a filter of size
+             kernel_height x kernel_width
         """
         rng = tf.random.get_global_generator()
 
@@ -23,8 +23,8 @@ class Conv2D(tf.Module):
         self.kernel = tf.Variable(
             rng.normal(
                 shape=[
-                    kernel_shape,
-                    kernel_shape,
+                    kernel_shape[0],
+                    kernel_shape[1],
                     input_channels,
                     output_channels
                 ],

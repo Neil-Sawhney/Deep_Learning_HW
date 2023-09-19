@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.parametrize("kernel_size", [2, 4, 8])
+@pytest.mark.parametrize("kernel_size", [(2, 2), (4, 4), (8, 8)])
 @pytest.mark.parametrize("input_channels", [1, 3, 16])
 @pytest.mark.parametrize("output_channels", [1, 3, 16])
 def test_dimensionality(kernel_size, input_channels, output_channels):

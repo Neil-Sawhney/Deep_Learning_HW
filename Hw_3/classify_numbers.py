@@ -6,7 +6,7 @@ import yaml
 from tqdm import trange
 
 from functional.idx_loader import load_idx_data
-from functional.optimizer import grad_update
+from functional.optimizer import adam
 from models.classifier import Classifier
 
 parser = argparse.ArgumentParser(
@@ -44,11 +44,14 @@ input_depth = 1
 layer_depths = config["cnn"]["layer_depths"]
 kernel_sizes = config["cnn"]["kernel_sizes"]
 num_iters = config["learning"]["num_iters"]
-step_size = config["learning"]["step_size"]
-decay_rate = config["learning"]["decay_rate"]
 l2_scale = config["learning"]["l2_scale"]
 dropout_prob = config["learning"]["dropout_prob"]
+batch_size = config["learning"]["batch_size"]
+learning_rate = config["learning"]["learning_rate"]
 refresh_rate = config["display"]["refresh_rate"]
+num_samples = train_images.shape[1]
+pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
+pool_size = config["cnn"]["pool_size"]
 
 classifier = Classifier(input_depth,
                         layer_depths,
@@ -62,24 +65,39 @@ classifier = Classifier(input_depth,
 bar = trange(num_iters)
 
 for i in bar:
+    batch_indices = rng.uniform(
+        shape=[batch_size], maxval=num_samples, dtype=tf.int32
+    )
     with tf.GradientTape() as tape:
+
+        train_images_batch = tf.gather(train_images, batch_indices)
+        train_labels_batch = tf.gather(train_labels, batch_indices)
         kernel_weights = tf.concat([tf.reshape(layer.kernel, [-1])
                                     for layer in classifier.conv_layers],
                                    axis=0)
         l2_loss = tf.nn.l2_loss(kernel_weights)
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels=tf.squeeze(train_labels),
-            logits=classifier(train_images)
+            labels=tf.squeeze(train_labels_batch),
+            logits=classifier(train_images_batch)
         )) + l2_scale * l2_loss
 
     grads = tape.gradient(loss, classifier.trainable_variables)
-    grad_update(step_size, classifier.trainable_variables, grads)
 
-    step_size *= decay_rate
+    adam(grads, classifier.trainable_variables, learning_rate)
+
+    def val_accuracy():
+        return tf.reduce_mean(
+            tf.cast(
+                tf.equal(
+                    classifier(val_images).numpy().argmax(axis=1),
+                    val_labels.numpy().reshape(-1)
+                ),
+                tf.float32)
+        )
 
     if i % refresh_rate == (refresh_rate - 1):
         bar.set_description(
-            f"Step {i}; Loss => {loss.numpy():0.4f}, \
-                step_size => {step_size:0.4f}"
+            f"Step {i}; Loss => {loss.numpy():0.4f};" +
+            f" Accuracy => {val_accuracy():0.4f}"
         )
         bar.refresh()
