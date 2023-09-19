@@ -52,12 +52,16 @@ refresh_rate = config["display"]["refresh_rate"]
 num_samples = train_images.shape[1]
 pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
 pool_size = config["cnn"]["pool_size"]
+num_hidden_layers = config["mlp"]["num_hidden_layers"]
+hidden_layer_width = config["mlp"]["hidden_layer_width"]
 
 classifier = Classifier(input_depth,
                         layer_depths,
                         kernel_sizes,
                         10,
                         train_images.shape[1],
+                        num_hidden_layers,
+                        hidden_layer_width,
                         pool_every_n_layers,
                         pool_size,
                         dropout_prob)
@@ -84,7 +88,7 @@ for i in bar:
     grads = tape.gradient(loss, classifier.trainable_variables)
 
     # TODO: Fix this
-    tf.keras.optimizers.Adam().apply_gradients(
+    tf.keras.optimizers.Adam(learning_rate).apply_gradients(
         zip(grads, classifier.trainable_variables)
     )
     # adam(grads, classifier.trainable_variables, learning_rate)

@@ -75,8 +75,7 @@ class Classifier(tf.Module):
                        self.num_classes,
                        self.num_hidden_layers,
                        self.hidden_layer_width,
-                       tf.nn.relu,
-                       tf.nn.softmax)
+                       tf.nn.relu)
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
