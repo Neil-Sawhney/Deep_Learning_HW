@@ -3,8 +3,8 @@ import pytest
 
 @pytest.mark.parametrize("input_depth", [1, 3])
 @pytest.mark.parametrize("layer_depths", [[1, 1], [3, 3]])
-@pytest.mark.parametrize("layer_kernel_sizes", [[2, 2],
-                                                [4, 4]])
+@pytest.mark.parametrize("layer_kernel_sizes", [[[2,2], [2,2]],
+                                                [[4,4], [4,4]]])
 @pytest.mark.parametrize("num_classes", [1, 3])
 @pytest.mark.parametrize("input_size", [16, 32, 64])
 @pytest.mark.parametrize("pool_every_n_layers", [0, 1, 2])
@@ -22,11 +22,16 @@ def test_dimensionality(input_depth,
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
 
+    num_hidden_layers = 2
+    hidden_layer_width = 20
+
     classifier = Classifier(input_depth,
                             layer_depths,
                             layer_kernel_sizes,
                             num_classes,
                             input_size,
+                            num_hidden_layers,
+                            hidden_layer_width,
                             pool_every_n_layers,
                             pool_size)
 

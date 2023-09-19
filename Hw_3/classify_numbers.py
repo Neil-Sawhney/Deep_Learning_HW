@@ -58,8 +58,8 @@ classifier = Classifier(input_depth,
                         kernel_sizes,
                         10,
                         train_images.shape[1],
-                        2,
-                        2,
+                        pool_every_n_layers,
+                        pool_size,
                         dropout_prob)
 
 bar = trange(num_iters)
@@ -83,7 +83,11 @@ for i in bar:
 
     grads = tape.gradient(loss, classifier.trainable_variables)
 
-    adam(grads, classifier.trainable_variables, learning_rate)
+    # TODO: Fix this
+    tf.keras.optimizers.Adam().apply_gradients(
+        zip(grads, classifier.trainable_variables)
+    )
+    # adam(grads, classifier.trainable_variables, learning_rate)
 
     def val_accuracy():
         return tf.reduce_mean(

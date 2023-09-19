@@ -1,8 +1,8 @@
 cnn:
-  layer_depths: [5, 5, 5, 5]
-  kernel_sizes: [(2,2), (2,2), (2, 2), (2, 2)]
-  pool_every_n_layers: 1
-  pool_size: 4
+  layer_depths: [4, 8]
+  kernel_sizes: [[5,5], [3,3]]
+  pool_every_n_layers: 2
+  pool_size: 2
 mlp:
   num_hidden_layers: 4
   hidden_layer_width: 20
@@ -10,7 +10,7 @@ basis_expansion:
   num_bases: 7 
 learning:
   l2_scale: .01
-  dropout_prob: .3
+  dropout_prob: 0.2
   batch_size: 1000
   num_iters: 20000 
   learning_rate: 0.001

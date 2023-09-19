@@ -1,6 +1,6 @@
 import tensorflow as tf
 from functional.conv_2d import Conv2D
-from models.linear import Linear
+from models.mlp import MLP
 
 
 class Classifier(tf.Module):
@@ -11,9 +11,11 @@ class Classifier(tf.Module):
             layer_kernel_sizes: list[tuple[int, int]],
             num_classes: int,
             input_size: int,
+            num_hidden_layers: int,
+            hidden_layer_width: int,
             pool_every_n_layers: int = 0,
             pool_size: int = 2,
-            dropout_prob: float = 0.5
+            dropout_prob: float = 0.5,
             ):
         """Initializes the Classifier class
 
@@ -30,6 +32,8 @@ class Classifier(tf.Module):
                 affects the output size of the call
             input_size (int): The size of the input image, the image should be
                 square, e.g. 28 for MNIST
+            num_hidden_layers (int): The number of hidden layers in the MLP
+            hidden_layer_width (int): The width of the hidden layers in the MLP
             pool_every_n_layers (int, optional): Adds a max pooling layer
                 every n layers. Defaults to 0. Aka, no
                 pooling layers.
@@ -41,6 +45,8 @@ class Classifier(tf.Module):
         self.layer_kernel_sizes = layer_kernel_sizes
         self.num_classes = num_classes
         self.input_size = input_size
+        self.num_hidden_layers = num_hidden_layers
+        self.hidden_layer_width = hidden_layer_width
         self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
         self.dropout_prob = dropout_prob
@@ -65,8 +71,12 @@ class Classifier(tf.Module):
                                            layer_kernel_size))
             input_depth = layer_depth
 
-        self.linear = Linear(self.flatten_size,
-                             self.num_classes)
+        self.mlp = MLP(self.flatten_size,
+                       self.num_classes,
+                       self.num_hidden_layers,
+                       self.hidden_layer_width,
+                       tf.nn.relu,
+                       tf.nn.softmax)
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
@@ -93,4 +103,4 @@ class Classifier(tf.Module):
                                                     self.pool_size,
                                                     "VALID")
         input_flattened = tf.reshape(input_tensor, [-1, self.flatten_size])
-        return self.linear(input_flattened)
+        return self.mlp(input_flattened)
