@@ -1,3 +1,7 @@
+cnn:
+  input_size: 28
+  layer_depths: [10, 10, 10, 10]
+  kernel_sizes: [(2, 2), (2, 2), (2, 2), (2, 2)]
 mlp:
   num_hidden_layers: 4
   hidden_layer_width: 20
@@ -5,9 +9,10 @@ basis_expansion:
   num_bases: 7 
 learning:
   l2_scale: .01
+  dropout_keep_prob: .5
   step_size: .5
   batch_size: 128
-  num_iters: 3000 
+  num_iters: 10000 
   decay_rate: 0.999
 data:
   num_samples: 500

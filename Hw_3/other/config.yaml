@@ -1,0 +1,19 @@
+learning:
+  step_size: 0.001
+  batch_size: 10
+  num_iters: 1000
+  decay_rate: 0.998
+
+network:
+  layer_depths: [32, 64]
+  layer_kernel_sizes:
+    - [3, 3]
+    - [3, 3]
+    - [3, 3]
+
+data:
+  num_samples: 200
+  noise: 0.1
+
+display:
+  refresh_rate: 10
