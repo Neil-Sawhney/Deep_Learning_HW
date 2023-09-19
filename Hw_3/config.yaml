@@ -9,7 +9,7 @@ basis_expansion:
   num_bases: 7 
 learning:
   l2_scale: .01
-  dropout_keep_prob: .5
+  dropout_prob: .5
   step_size: .5
   batch_size: 128
   num_iters: 10000 

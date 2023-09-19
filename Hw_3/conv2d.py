@@ -23,8 +23,8 @@ class Conv2D(tf.Module):
         self.kernel = tf.Variable(
             rng.normal(
                 shape=[
-                    kernel_shape,
-                    kernel_shape,
+                    kernel_shape[0],
+                    kernel_shape[1],
                     input_channels,
                     output_channels
                 ],
@@ -40,14 +40,14 @@ class Conv2D(tf.Module):
             trainable=True,
             name="Conv2D/bias")
 
-    def __call__(self, input: tf.Tensor):
+    def __call__(self, input_tensor: tf.Tensor):
         """Applies the convolution to the input
 
         Args:
-            input (tf.Tensor): The input to apply the convolution to
+            input_tensor (tf.Tensor): The input to apply the convolution to
 
         Returns:
             tf.Tensor: The result of the convolution with the bias added
                 the shape of the output tensor is the same as the input
         """
-        return self.bias + tf.nn.conv2d(input, self.kernel, 1, "SAME")
+        return self.bias + tf.nn.conv2d(input_tensor, self.kernel, 1, "SAME")

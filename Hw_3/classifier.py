@@ -13,6 +13,7 @@ class Classifier(tf.Module):
             input_size: int,
             pool_every_n_layers: int = 0,
             pool_size: int = 2,
+            dropout_prob: float = 0.5
             ):
         """Initializes the Classifier class
 
@@ -30,13 +31,12 @@ class Classifier(tf.Module):
             input_size (int): The size of the input image, the image should be
                 square, e.g. 28 for MNIST
             pool_every_n_layers (int, optional): Adds a max pooling layer
-                every n layers. The number of layers specified by layer_depths
-                should be divisible by this number. Defaults to 0. Aka, no
+                every n layers. Defaults to 0. Aka, no
                 pooling layers.
             pool_size (int, optional): The size of the kernel for the max
                 pooling layer. Defaults to 2.
+            dropout_prob (float, optional): The probability of dropping a node
         """
-        self.input_depth = input_depth
         self.layer_depths = layer_depths
         self.layer_kernel_sizes = layer_kernel_sizes
         self.num_classes = num_classes
@@ -44,30 +44,30 @@ class Classifier(tf.Module):
         self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
 
-        # TODO: Make sure the flatten size is correct
-        num_layers = self.layer_depths.__len__()
+        num_layers = len(self.layer_depths)
+        output_depth = self.layer_depths[-1]
         if self.pool_every_n_layers > 0:
             num_pools = num_layers // self.pool_every_n_layers
-            self.flatten_size = (
+            self.flatten_size = int(
                 (input_size / (self.pool_size ** (num_pools)))**2 *
-                num_layers)
+                output_depth)
         else:
-            self.flatten_size = (input_size**2 * num_layers)
+            self.flatten_size = int(input_size**2 * output_depth)
 
         self.conv_layers = []
         for (layer_depth,
              layer_kernel_size) in zip(
                  self.layer_depths,
                  self.layer_kernel_sizes):
-            self.conv_layers.append(Conv2D(self.input_depth,
+            self.conv_layers.append(Conv2D(input_depth,
                                            layer_depth,
                                            layer_kernel_size))
-            self.input_depth = self.layer_depth
+            input_depth = layer_depth
 
         self.linear = Linear(self.flatten_size,
                              self.num_classes)
 
-    def __call__(self, input: tf.Tensor):
+    def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
              runs it through a series of convolutional layers which consists of
              a convolution, a relu, and a max pooling layer every n layers
@@ -75,7 +75,7 @@ class Classifier(tf.Module):
              then sends it through a softmax activation
 
         Args:
-            input (tf.Tensor): The Image to classify, should have shape
+            input_tensor (tf.Tensor): The Image to classify, should have shape
                 [batch_size, input_size, input_size, input_depth]
 
         Returns:
@@ -84,14 +84,15 @@ class Classifier(tf.Module):
                 each logit represents the confidence of the network that the
                 image belongs to that class
         """
-        for conv_layer in self.conv_layers:
-            input = tf.nn.relu(conv_layer(input))
+        for i, conv_layer in enumerate(self.conv_layers):
+            input_tensor = tf.nn.relu(conv_layer(input_tensor))
+            input_tensor = tf.nn.dropout(input_tensor, self.dropout_prob)
             if self.pool_every_n_layers > 0:
-                input = tf.nn.max_pool2d(input,
-                                         self.pool_size,
-                                         self.pool_size,
-                                         "VALID")
-
+                if (i + 1) % self.pool_every_n_layers == 0:
+                    input_tensor = tf.nn.max_pool2d(input_tensor,
+                                                    self.pool_size,
+                                                    self.pool_size,
+                                                    "VALID")
         # TODO: Make sure the flatten is correct
-        input_flattened = tf.reshape(input, [-1, self.flatten_size])
+        input_flattened = tf.reshape(input_tensor, [-1, self.flatten_size])
         return tf.nn.softmax(self.linear(input_flattened))

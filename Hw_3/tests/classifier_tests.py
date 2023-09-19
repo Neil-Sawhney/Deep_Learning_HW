@@ -6,7 +6,7 @@ import pytest
 @pytest.mark.parametrize("layer_kernel_sizes", [[(2, 2), (2, 2)],
                                                 [(4, 4), (4, 4)]])
 @pytest.mark.parametrize("num_classes", [1, 3])
-@pytest.mark.parametrize("input_size", [28, 32])
+@pytest.mark.parametrize("input_size", [16, 32, 64])
 @pytest.mark.parametrize("pool_every_n_layers", [0, 1, 2])
 @pytest.mark.parametrize("pool_size", [2, 4])
 def test_dimensionality(input_depth,
