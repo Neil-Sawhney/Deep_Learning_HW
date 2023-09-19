@@ -4,7 +4,7 @@ import pytest
 def test_non_additivity():
     import tensorflow as tf
 
-    from mlp import MLP
+    from models.mlp import MLP
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -44,7 +44,7 @@ def test_non_additivity():
 def test_non_homogeneity():
     import tensorflow as tf
 
-    from mlp import MLP
+    from models.mlp import MLP
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -85,7 +85,7 @@ def test_non_homogeneity():
 def test_additivity():
     import tensorflow as tf
 
-    from mlp import MLP
+    from models.mlp import MLP
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -106,7 +106,7 @@ def test_additivity():
 def test_homogeneity():
     import tensorflow as tf
 
-    from mlp import MLP
+    from models.mlp import MLP
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -128,7 +128,7 @@ def test_homogeneity():
 def test_dimensionality():
     import tensorflow as tf
 
-    from mlp import MLP
+    from models.mlp import MLP
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -149,7 +149,7 @@ def test_dimensionality():
 def test_trainable():
     import tensorflow as tf
 
-    from mlp import MLP
+    from models.mlp import MLP
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -181,8 +181,8 @@ def test_classification():
 
     import tensorflow as tf
 
-    from main import grad_update
-    from mlp import MLP
+    from classify_numbers import grad_update
+    from models.mlp import MLP
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
