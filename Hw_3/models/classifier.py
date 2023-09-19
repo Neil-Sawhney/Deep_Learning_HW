@@ -56,7 +56,7 @@ class Classifier(tf.Module):
         if self.pool_every_n_layers > 0:
             num_pools = num_layers // self.pool_every_n_layers
             self.flatten_size = int(
-                (input_size / (self.pool_size ** (num_pools)))**2 *
+                (input_size // (self.pool_size ** (num_pools)))**2 *
                 output_depth)
         else:
             self.flatten_size = int(input_size**2 * output_depth)
@@ -93,13 +93,20 @@ class Classifier(tf.Module):
                 [batch_size, num_classes]
         """
         for i, conv_layer in enumerate(self.conv_layers):
-            input_tensor = tf.nn.relu(conv_layer(input_tensor))
-            input_tensor = tf.nn.dropout(input_tensor, self.dropout_prob)
+            output_tensor = tf.nn.relu(conv_layer(input_tensor))
+            output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
             if self.pool_every_n_layers > 0:
                 if (i + 1) % self.pool_every_n_layers == 0:
-                    input_tensor = tf.nn.max_pool2d(input_tensor,
-                                                    self.pool_size,
-                                                    self.pool_size,
-                                                    "VALID")
-        input_flattened = tf.reshape(input_tensor, [-1, self.flatten_size])
-        return self.mlp(input_flattened)
+                    output_tensor = tf.nn.max_pool2d(output_tensor,
+                                                     self.pool_size,
+                                                     self.pool_size,
+                                                     "VALID")
+            input_tensor = output_tensor
+
+        if self.flatten_size != (output_tensor.shape[1] *
+                                 output_tensor.shape[2] *
+                                 output_tensor.shape[3]):
+            raise ValueError(
+                "Flatten size does not match output tensor shape")
+        output_flattened = tf.reshape(output_tensor, [-1, self.flatten_size])
+        return self.mlp(output_flattened)
