@@ -47,13 +47,13 @@ num_iters = config["learning"]["num_iters"]
 l2_scale = config["learning"]["l2_scale"]
 dropout_prob = config["learning"]["dropout_prob"]
 batch_size = config["learning"]["batch_size"]
-learning_rate = config["learning"]["learning_rate"]
 refresh_rate = config["display"]["refresh_rate"]
 num_samples = train_images.shape[1]
 pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
 pool_size = config["cnn"]["pool_size"]
 num_hidden_layers = config["mlp"]["num_hidden_layers"]
 hidden_layer_width = config["mlp"]["hidden_layer_width"]
+learning_rate = config["learning"]["learning_rate"]
 
 classifier = Classifier(input_depth,
                         layer_depths,
@@ -76,9 +76,13 @@ for i in bar:
 
         train_images_batch = tf.gather(train_images, batch_indices)
         train_labels_batch = tf.gather(train_labels, batch_indices)
-        kernel_weights = tf.concat([tf.reshape(layer.kernel, [-1])
-                                    for layer in classifier.conv_layers],
-                                   axis=0)
+        # kernel_weights = tf.concat([tf.reshape(layer.kernel, [-1])
+        #                             for layer in classifier.conv_layers],
+        #                            axis=0)
+        kernel_weights = tf.concat([tf.reshape(weight, [-1]) for weight in
+                                      classifier.trainable_variables if weight.name ==
+                                      "Conv2D/kernel"], axis=0)
+
         l2_loss = tf.nn.l2_loss(kernel_weights)
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
             labels=tf.squeeze(train_labels_batch),
@@ -93,6 +97,16 @@ for i in bar:
     )
     # adam(grads, classifier.trainable_variables, learning_rate)
 
+    def train_batch_accuracy():
+        return tf.reduce_mean(
+            tf.cast(
+                tf.equal(
+                    classifier(train_images_batch).numpy().argmax(axis=1),
+                    train_labels_batch.numpy().reshape(-1)
+                ),
+                tf.float32)
+        )
+
     def val_accuracy():
         return tf.reduce_mean(
             tf.cast(
@@ -103,9 +117,20 @@ for i in bar:
                 tf.float32)
         )
 
+    def test_accuracy():
+        return tf.reduce_mean(
+            tf.cast(
+                tf.equal(
+                    classifier(test_images).numpy().argmax(axis=1),
+                    test_labels.numpy().reshape(-1)
+                ),
+                tf.float32)
+        )
+
     if i % refresh_rate == (refresh_rate - 1):
         bar.set_description(
             f"Step {i}; Loss => {loss.numpy():0.4f};" +
-            f" Accuracy => {val_accuracy():0.4f}"
+            f" Train Batch Accuracy => {train_batch_accuracy():0.4};" +
+            f" Val Accuracy => {val_accuracy():0.4f}"
         )
         bar.refresh()
