@@ -6,7 +6,7 @@ import yaml
 from tqdm import trange
 
 from functional.idx_loader import load_idx_data
-from functional.optimizer import adam
+from functional.optimizer import Adam
 from models.classifier import Classifier
 
 parser = argparse.ArgumentParser(
@@ -86,13 +86,11 @@ for i in bar:
                 logits=classifier(train_images_batch)
             )) + l2_scale * l2_loss
 
-    grads = tape.gradient(training_loss, classifier.trainable_variables)
+        grads = tape.gradient(training_loss, classifier.trainable_variables)
 
-    # TODO: Fix this
-    tf.keras.optimizers.Adam(learning_rate).apply_gradients(
-        zip(grads, classifier.trainable_variables)
+    Adam(learning_rate).apply_gradients(
+        grads, classifier.trainable_variables
     )
-    # adam(grads, classifier.trainable_variables, learning_rate)
 
     def train_batch_accuracy():
         return tf.reduce_mean(
