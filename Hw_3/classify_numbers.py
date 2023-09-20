@@ -53,8 +53,6 @@ num_hidden_layers = config["mlp"]["num_hidden_layers"]
 hidden_layer_width = config["mlp"]["hidden_layer_width"]
 learning_rate = config["learning"]["learning_rate"]
 
-minimum_val_loss = float("inf")
-minimum_val_loss_variables = []
 num_samples = train_images.shape[0]
 input_depth = train_images.shape[-1]
 classifier = Classifier(input_depth,
@@ -125,8 +123,11 @@ for i in bar:
                 tf.float32)
         )
 
+    minimum_val_loss = float("inf")
+    checkpoint = tf.train.Checkpoint(classifier)
+
     def val_loss():
-        global minimum_val_loss, minimum_val_loss_variables
+        global minimum_val_loss, checkpoint
         validation_loss = tf.reduce_mean(
             tf.nn.sparse_softmax_cross_entropy_with_logits(
                 labels=tf.squeeze(val_labels),
@@ -136,7 +137,9 @@ for i in bar:
 
         if validation_loss < minimum_val_loss:
             minimum_val_loss = validation_loss
-            minimum_val_loss_variables = classifier.trainable_variables
+            checkpoint.save(
+                "artifacts/checkpoints/"
+            )
 
         return validation_loss
 
@@ -149,6 +152,6 @@ for i in bar:
         )
         bar.refresh()
 
-# classifier.set_trainable_variables(minimum_val_loss_variables)
+checkpoint.restore(tf.train.latest_checkpoint("artifacts/checkpoints/"))
 
 print(f"Test Accuracy => {test_accuracy():0.4f}")

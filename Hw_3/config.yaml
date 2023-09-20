@@ -12,7 +12,7 @@ learning:
   l2_scale: 0.001
   dropout_prob: .3
   batch_size: 500
-  num_iters: 20 
+  num_iters: 1000 
   learning_rate: 0.001
 display:
-  refresh_rate: 5
+  refresh_rate: 10
