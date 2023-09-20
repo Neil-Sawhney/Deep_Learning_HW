@@ -53,6 +53,8 @@ num_hidden_layers = config["mlp"]["num_hidden_layers"]
 hidden_layer_width = config["mlp"]["hidden_layer_width"]
 learning_rate = config["learning"]["learning_rate"]
 
+minimum_val_loss = float("inf")
+minimum_val_loss_variables = []
 num_samples = train_images.shape[0]
 input_depth = train_images.shape[-1]
 classifier = Classifier(input_depth,
@@ -123,10 +125,30 @@ for i in bar:
                 tf.float32)
         )
 
+    def val_loss():
+        global minimum_val_loss, minimum_val_loss_variables
+        validation_loss = tf.reduce_mean(
+            tf.nn.sparse_softmax_cross_entropy_with_logits(
+                labels=tf.squeeze(val_labels),
+                logits=classifier(val_images)
+            )
+        )
+
+        if validation_loss < minimum_val_loss:
+            minimum_val_loss = validation_loss
+            minimum_val_loss_variables = classifier.trainable_variables
+
+        return validation_loss
+
     if i % refresh_rate == (refresh_rate - 1):
         bar.set_description(
             f"Step {i}; Loss => {training_loss.numpy():0.4f};" +
             f" Train Batch Accuracy => {train_batch_accuracy():0.4};" +
-            f" Val Accuracy => {val_accuracy():0.4f}"
+            f" Val Accuracy => {val_accuracy():0.4f}" +
+            f" Val loss => {val_loss():0.4f}"
         )
         bar.refresh()
+
+# classifier.set_trainable_variables(minimum_val_loss_variables)
+
+print(f"Test Accuracy => {test_accuracy():0.4f}")

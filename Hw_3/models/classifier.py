@@ -94,7 +94,7 @@ class Classifier(tf.Module):
         """
         for i, conv_layer in enumerate(self.conv_layers):
             output_tensor = tf.nn.relu(conv_layer(input_tensor))
-            # output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
+            output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
             if self.pool_every_n_layers > 0:
                 if (i + 1) % self.pool_every_n_layers == 0:
                     output_tensor = tf.nn.max_pool2d(output_tensor,
