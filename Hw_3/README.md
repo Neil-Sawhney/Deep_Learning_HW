@@ -3,7 +3,7 @@
 
 - Install requirements with ``` pip install -r requirements.txt ```.
 
-- Run ``` python main.py ```.
+- Run runner e.g. ``` python classify_numbers.py ```.
     - Change parameters in the ``` ./config.yaml ``` file.
 
 - View the results in ``` ./artifacts ```.
