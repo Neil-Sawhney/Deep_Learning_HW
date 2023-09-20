@@ -1,0 +1,3 @@
+echo "#### CREATING TAR FILE ####"
+tar cvf sawhney-neil-2023-hw3.tar ./models/linear.py ./models/mlp.py ./models/basis_expansion.py ./models/classifier.py ./functional/conv_2d.py ./functional/idx_loader.py ./functional/optimizer.py ./classify_numbers.py ./README.md ./requirements.txt ./config.yaml ./tests/basis_expansion_tests.py ./tests/classifier_tests.py ./tests/conv_2d_tests.py ./tests/idx_loader_tests.py ./tests/mlp_tests.py ./tests/linear_tests.py ./data/t10k-images-idx3-ubyte ./data/t10k-labels-idx1-ubyte ./data/train-images-idx3-ubyte ./data/train-labels-idx1-ubyte ./artifacts
+echo "#### TAR FILE CREATED ####"
