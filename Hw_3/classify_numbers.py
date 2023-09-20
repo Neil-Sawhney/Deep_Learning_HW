@@ -40,7 +40,6 @@ test_images = tf.cast(load_idx_data("data/t10k-images-idx3-ubyte"),
 test_labels = tf.cast(load_idx_data("data/t10k-labels-idx1-ubyte"),
                       tf.int32)
 
-input_depth = 1
 layer_depths = config["cnn"]["layer_depths"]
 kernel_sizes = config["cnn"]["kernel_sizes"]
 num_iters = config["learning"]["num_iters"]
@@ -54,6 +53,8 @@ num_hidden_layers = config["mlp"]["num_hidden_layers"]
 hidden_layer_width = config["mlp"]["hidden_layer_width"]
 learning_rate = config["learning"]["learning_rate"]
 
+num_samples = train_images.shape[0]
+input_depth = train_images.shape[-1]
 classifier = Classifier(input_depth,
                         layer_depths,
                         kernel_sizes,
@@ -66,8 +67,8 @@ classifier = Classifier(input_depth,
                         dropout_prob)
 
 bar = trange(num_iters)
+adam = Adam(learning_rate)
 
-num_samples = train_images.shape[1]
 for i in bar:
     batch_indices = rng.uniform(
         shape=[batch_size], maxval=num_samples, dtype=tf.int32
@@ -86,9 +87,9 @@ for i in bar:
                 logits=classifier(train_images_batch)
             )) + l2_scale * l2_loss
 
-        grads = tape.gradient(training_loss, classifier.trainable_variables)
+    grads = tape.gradient(training_loss, classifier.trainable_variables)
 
-    Adam(learning_rate).apply_gradients(
+    adam.apply_gradients(
         grads, classifier.trainable_variables
     )
 

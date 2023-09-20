@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 class Adam:
     def __init__(self, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1e-7):
         self.beta_1 = beta_1
