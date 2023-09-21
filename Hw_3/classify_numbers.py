@@ -43,8 +43,8 @@ def test_accuracy():
     )
 
 
-def val_loss():
-    global minimum_val_loss, checkpoint
+def val_loss(checkpoint):
+    global minimum_val_loss
     validation_loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
             labels=tf.squeeze(val_labels),
@@ -99,6 +99,7 @@ if __name__ == "__main__":
     weight_decay = config["learning"]["weight_decay"]
     dropout_prob = config["learning"]["dropout_prob"]
     batch_size = config["learning"]["batch_size"]
+    learning_patience = config["learning"]["learning_patience"]
     refresh_rate = config["display"]["refresh_rate"]
     pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
     pool_size = config["cnn"]["pool_size"]
@@ -149,20 +150,30 @@ if __name__ == "__main__":
 
         checkpoint = tf.train.Checkpoint(classifier)
 
-        validation_loss = val_loss()
+        # If no improvement in validation loss for learning_patience
+        # iterations, stop training
+        validation_loss = []
+        validation_loss.append(val_loss(checkpoint))
+        if len(validation_loss) >= learning_patience:
+            validation_loss.pop(0)
 
         if i % refresh_rate == (refresh_rate - 1):
             bar.set_description(
                 f"Step {i}; Loss => {training_loss.numpy():0.4f};" +
                 f" Train Batch Accuracy => {train_batch_accuracy():0.4};" +
                 f" Val Accuracy => {val_accuracy():0.4f}" +
-                f" Val loss => {validation_loss:0.4f}"
+                f" Val loss => {validation_loss[-1]:0.4f}"
             )
             bar.refresh()
 
-        if validation_loss > minimum_val_loss + 0.2:
+        # if none of the losses in validation_loss are less than the
+        # minimum_val_loss
+        if (tf.reduce_all(validation_loss >= minimum_val_loss) and
+                (len(validation_loss) >= learning_patience)):
             break
 
     checkpoint.restore(tf.train.latest_checkpoint("artifacts/checkpoints/"))
 
+    print(f"Final Training Loss => {training_loss.numpy():0.4f}")
+    print(f"Stop Iteration => {i}")
     print(f"Test Accuracy => {test_accuracy():0.4f}")

@@ -18,7 +18,8 @@ class Conv2D(tf.Module):
         """
         rng = tf.random.get_global_generator()
 
-        stddev = tf.math.sqrt(2. / (input_channels + output_channels))
+        # He initialization
+        stddev = tf.sqrt(2 / (input_channels * kernel_shape[0] * kernel_shape[1]))
 
         self.kernel = tf.Variable(
             rng.normal(
