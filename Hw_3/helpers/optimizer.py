@@ -6,7 +6,8 @@ class Adam:
                  learning_rate=1e-3,
                  beta_1=0.9,
                  beta_2=0.999,
-                 epsilon=1e-7):
+                 epsilon=1e-7,
+                 weight_decay=5e-3):
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
         self.beta_2 = beta_2
@@ -25,3 +26,7 @@ class Adam:
             v_hat = v / (1 - self.beta_2)
             var.assign(var - self.learning_rate * m_hat /
                        (tf.sqrt(v_hat) + self.epsilon))
+        weights = [weight for weight in vars if
+                   weight.name.endswith('kernel')]
+        for weight in weights:
+            weight.assign(weight - self.weight_decay * weight)

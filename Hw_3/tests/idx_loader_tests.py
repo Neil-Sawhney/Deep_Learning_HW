@@ -2,7 +2,7 @@ import pytest
 
 
 def test_dimensionality():
-    from functional.idx_loader import load_idx_data
+    from helpers.idx_loader import load_idx_data
 
     train_images = load_idx_data("data/train-images-idx3-ubyte")
     train_labels = load_idx_data("data/train-labels-idx1-ubyte")

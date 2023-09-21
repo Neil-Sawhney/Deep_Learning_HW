@@ -6,7 +6,7 @@ import pytest
 @pytest.mark.parametrize("output_channels", [1, 3, 16])
 def test_dimensionality(kernel_size, input_channels, output_channels):
     import tensorflow as tf
-    from functional.conv_2d import Conv2D
+    from helpers.conv_2d import Conv2D
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
