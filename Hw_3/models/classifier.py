@@ -95,27 +95,16 @@ class Classifier(tf.Module):
         moving_input_tensor = input_tensor
         for i, conv_layer in enumerate(self.conv_layers):
             output_tensor = tf.nn.relu(conv_layer(moving_input_tensor))
+            output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
             if self.pool_every_n_layers > 0:
                 if (i + 1) % self.pool_every_n_layers == 0:
-                    # Residual connection
-                    output_tensor = tf.nn.dropout(output_tensor,
-                                                  self.dropout_prob)
                     output_tensor = tf.nn.max_pool2d(output_tensor,
                                                      self.pool_size,
                                                      self.pool_size,
                                                      "VALID")
-                    # Residual connection
-                    output_tensor = tf.nn.dropout(output_tensor,
-                                                  self.dropout_prob)
-                    output_tensor += tf.nn.max_pool2d(moving_input_tensor,
-                                                      self.pool_size,
-                                                      self.pool_size,
-                                                      "VALID")
                 else:
-                    output_tensor = tf.nn.dropout(output_tensor,
-                                                  self.dropout_prob)
-                    # Residual connection
                     output_tensor += moving_input_tensor
+
             moving_input_tensor = output_tensor
 
         if self.flatten_size != (output_tensor.shape[1] *

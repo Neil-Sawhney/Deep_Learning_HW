@@ -43,8 +43,7 @@ def test_accuracy():
     )
 
 
-def val_loss(checkpoint):
-    global minimum_val_loss
+def val_loss(checkpoint, minimum_val_loss, minimum_val_step, current_step):
     validation_loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
             labels=tf.squeeze(val_labels),
@@ -54,11 +53,12 @@ def val_loss(checkpoint):
 
     if validation_loss < minimum_val_loss:
         minimum_val_loss = validation_loss
+        minimum_val_step = current_step
         checkpoint.save(
             "artifacts/checkpoints/"
         )
 
-    return validation_loss
+    return validation_loss, minimum_val_loss, minimum_val_step
 
 
 if __name__ == "__main__":
@@ -124,6 +124,9 @@ if __name__ == "__main__":
     adam = Adam(learning_rate, weight_decay=weight_decay)
 
     minimum_val_loss = float("inf")
+    minimum_val_step = 0
+    validation_loss = 0
+    checkpoint = tf.train.Checkpoint(classifier)
 
     for i in bar:
         batch_indices = rng.uniform(
@@ -148,28 +151,24 @@ if __name__ == "__main__":
             grads, classifier.trainable_variables
         )
 
-        checkpoint = tf.train.Checkpoint(classifier)
-
         # If no improvement in validation loss for learning_patience
         # iterations, stop training
-        validation_loss = []
-        validation_loss.append(val_loss(checkpoint))
-        if len(validation_loss) >= learning_patience:
-            validation_loss.pop(0)
+        validation_loss, minimum_val_loss, minimum_val_step = \
+            val_loss(checkpoint, minimum_val_loss, minimum_val_step, i)
 
         if i % refresh_rate == (refresh_rate - 1):
             bar.set_description(
-                f"Step {i}; Loss => {training_loss.numpy():0.4f};" +
+                f"Step {i}; Train Loss => {training_loss.numpy():0.4f};" +
                 f" Train Batch Accuracy => {train_batch_accuracy():0.4};" +
                 f" Val Accuracy => {val_accuracy():0.4f}" +
-                f" Val loss => {validation_loss[-1]:0.4f}"
+                f" Val loss => {validation_loss:0.4f}"
             )
             bar.refresh()
 
         # if none of the losses in validation_loss are less than the
         # minimum_val_loss
-        if (tf.reduce_all(validation_loss >= minimum_val_loss) and
-                (len(validation_loss) >= learning_patience)):
+        if (not validation_loss < minimum_val_loss and
+                i - minimum_val_step > learning_patience):
             break
 
     checkpoint.restore(tf.train.latest_checkpoint("artifacts/checkpoints/"))
