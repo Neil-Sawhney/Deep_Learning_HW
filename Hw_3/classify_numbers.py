@@ -54,8 +54,8 @@ def val_loss(checkpoint, minimum_val_loss, minimum_val_step, current_step):
     if validation_loss < minimum_val_loss:
         minimum_val_loss = validation_loss
         minimum_val_step = current_step
-        checkpoint.save(
-            "artifacts/checkpoints/"
+        checkpoint.write(
+            "artifacts/checkpoints/classify_numbers"
         )
 
     return validation_loss, minimum_val_loss, minimum_val_step
@@ -127,6 +127,9 @@ if __name__ == "__main__":
     minimum_val_step = 0
     validation_loss = 0
     checkpoint = tf.train.Checkpoint(classifier)
+    manager = tf.train.CheckpointManager(
+        checkpoint, "artifacts/checkpoints/classify_numbers", max_to_keep=1
+    )
 
     for i in bar:
         batch_indices = rng.uniform(
@@ -171,7 +174,9 @@ if __name__ == "__main__":
                 i - minimum_val_step > learning_patience):
             break
 
-    checkpoint.restore(tf.train.latest_checkpoint("artifacts/checkpoints/"))
+    checkpoint.read(
+        "artifacts/checkpoints/classify_numbers"
+    ).assert_consumed()
 
     print(f"Final Training Loss => {training_loss.numpy():0.4f}")
     print(f"Stop Iteration => {i}")

@@ -5,7 +5,8 @@ class Conv2D(tf.Module):
     def __init__(self,
                  input_channels: int,
                  output_channels: int,
-                 kernel_shape: tuple[int, int],):
+                 kernel_shape: tuple[int, int],
+                 stride: int = 1,):
         """Initializes the Conv2D class
 
         Args:
@@ -14,8 +15,11 @@ class Conv2D(tf.Module):
                 1 for grayscale images
             output_channels (int): How many filters the convolution should have
             kernel_shape tuple[int, int]: Uses a filter of size
-             kernel_height x kernel_width
+                kernel_height x kernel_width
+            stride (int, optional): The stride of the convolution.
         """
+        self.stride = stride
+
         rng = tf.random.get_global_generator()
 
         # He initialization
@@ -52,4 +56,8 @@ class Conv2D(tf.Module):
             tf.Tensor: The result of the convolution with the bias added
                 the shape of the output tensor is the same as the input
         """
-        return self.bias + tf.nn.conv2d(input_tensor, self.kernel, 1, "SAME")
+        return self.bias + tf.nn.conv2d(
+            input_tensor,
+            self.kernel,
+            [1, self.stride, self.stride, 1],
+            "SAME")
