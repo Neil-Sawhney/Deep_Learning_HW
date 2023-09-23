@@ -4,7 +4,7 @@ import tensorflow as tf
 import yaml
 from tqdm import trange
 
-from helpers.idx_loader import load_idx_data
+from helpers.load_idx_data import load_idx_data
 from helpers.optimizer import Adam
 from layers.classifier import Classifier
 

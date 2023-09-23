@@ -8,7 +8,8 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "./main.py classify_cifar10",
+            "program": "./main.py",
+            "args": ["classify_cifar10"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
