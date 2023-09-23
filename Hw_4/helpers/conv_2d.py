@@ -6,7 +6,8 @@ class Conv2D(tf.Module):
                  input_channels: int,
                  output_channels: int,
                  kernel_shape: tuple[int, int],
-                 stride: int = 1,):
+                 stride: int = 1,
+                 bias: bool = False):
         """Initializes the Conv2D class
 
         Args:
@@ -17,8 +18,10 @@ class Conv2D(tf.Module):
             kernel_shape tuple[int, int]: Uses a filter of size
                 kernel_height x kernel_width
             stride (int, optional): The stride of the convolution.
+            bias (bool, optional): Whether or not to use a bias.
         """
         self.stride = stride
+        self.bias = bias
 
         rng = tf.random.get_global_generator()
 
@@ -56,8 +59,11 @@ class Conv2D(tf.Module):
             tf.Tensor: The result of the convolution with the bias added
                 the shape of the output tensor is the same as the input
         """
-        return self.bias + tf.nn.conv2d(
+        result = tf.nn.conv2d(
             input_tensor,
             self.kernel,
             [1, self.stride, self.stride, 1],
             "SAME")
+        if self.bias is not None:
+            result = result + self.bias
+        return result

@@ -62,13 +62,17 @@ class Classifier(tf.Module):
             self.flatten_size = int(input_size**2 * output_depth)
 
         self.conv_layers = []
+        self.shortcut_layers = []
         for (layer_depth,
              layer_kernel_size) in zip(
                  self.layer_depths,
                  self.layer_kernel_sizes):
             self.conv_layers.append(Conv2D(input_depth,
                                            layer_depth,
-                                           layer_kernel_size))
+                                           layer_kernel_size, bias=True))
+            self.shortcut_layers.append(Conv2D(input_depth,
+                                               layer_depth,
+                                               [1, 1]))
             input_depth = layer_depth
 
         self.mlp = MLP(self.flatten_size,
@@ -93,9 +97,13 @@ class Classifier(tf.Module):
                 [batch_size, num_classes]
         """
         moving_input_tensor = input_tensor
-        for i, conv_layer in enumerate(self.conv_layers):
+        for (i,
+             (conv_layer, shortcut_layer)
+             ) in enumerate(zip(self.conv_layers, self.shortcut_layers)):
             shortcut = moving_input_tensor
+
             output_tensor = tf.nn.relu(conv_layer(moving_input_tensor))
+            shortcut = shortcut_layer(shortcut)
             if (self.pool_every_n_layers != 0) and \
                ((i + 1) % self.pool_every_n_layers) == 0:
                 output_tensor = tf.nn.max_pool2d(output_tensor, self.pool_size,
@@ -103,8 +111,9 @@ class Classifier(tf.Module):
                 shortcut = tf.nn.max_pool2d(shortcut, self.pool_size,
                                             strides=2, padding='VALID')
             output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
+
             # TODO: Is this supposed to be here? it kinda makes it worse :(
-            # output_tensor += shortcut
+            output_tensor += shortcut
 
             moving_input_tensor = output_tensor
 

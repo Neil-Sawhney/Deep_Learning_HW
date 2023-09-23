@@ -79,18 +79,21 @@ def run(config_path: Path = Path("configs/classify_cifar10_config.yaml")):
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    train_labels, train_images = load_pickle_data(
+    train_and_val_labels, train_and_val_images = load_pickle_data(
         "data/cifar-10-batches-py/data_batch_1")
+    for i in range(2, 6):
+        labels, images = load_pickle_data(
+            f"data/cifar-10-batches-py/data_batch_{i}")
+        train_and_val_labels = tf.concat([train_and_val_labels, labels],
+                                         axis=0)
+        train_and_val_images = tf.concat([train_and_val_images, images],
+                                         axis=0)
 
-    # TODO: figure out how to load all the data
-    # for i in range(2, 6):
-    #     images, labels = load_pickle_data(
-    #         f"data/cifar-10-batches-py/data_batch_{i}")
-    #     train_images = tf.concat([train_images, images], axis=0)
-    #     train_labels = tf.concat([train_labels, labels], axis=0)
+    train_labels = train_and_val_labels[:-10000]
+    train_images = train_and_val_images[:-10000]
+    val_labels = train_and_val_labels[-10000:]
+    val_images = train_and_val_images[-10000:]
 
-    val_labels, val_images = load_pickle_data(
-        "data/cifar-10-batches-py/data_batch_2")
     test_labels, test_images = load_pickle_data(
         "data/cifar-10-batches-py/test_batch")
 
