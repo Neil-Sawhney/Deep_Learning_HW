@@ -23,9 +23,11 @@ def load_pickle_data(filename: Path):
     # values, the next 1024 the green, and the final 1024 the blue. The image
     # is stored in row-major order, so that the first 32 entries of the array
     # are the red channel values of the first row of the image.
+
     data = tf.reshape(data, [-1, 3, 32, 32])
+    # convert from (batch_size, depth, height, width) to
+    # (batch_size, height, width, depth)
     data = tf.transpose(data, [0, 2, 3, 1])
-    data = tf.image.per_image_standardization(data)
     data = tf.cast(data, tf.float32)
-    data /= 255.0
+    data = tf.image.per_image_standardization(data)
     return labels, data

@@ -69,10 +69,11 @@ class Classifier(tf.Module):
                  self.layer_kernel_sizes):
             self.conv_layers.append(Conv2D(input_depth,
                                            layer_depth,
-                                           layer_kernel_size, bias=True))
+                                           layer_kernel_size))
             self.shortcut_layers.append(Conv2D(input_depth,
                                                layer_depth,
-                                               [1, 1]))
+                                               [1, 1],
+                                               bias=False))
             input_depth = layer_depth
 
         self.mlp = MLP(self.flatten_size,
@@ -112,7 +113,6 @@ class Classifier(tf.Module):
                                             strides=2, padding='VALID')
             output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
 
-            # TODO: Is this supposed to be here? it kinda makes it worse :(
             output_tensor += shortcut
 
             moving_input_tensor = output_tensor
