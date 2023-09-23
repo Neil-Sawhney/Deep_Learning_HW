@@ -51,8 +51,15 @@ class Classifier(tf.Module):
         self.pool_size = pool_size
         self.dropout_prob = dropout_prob
 
+        num_layers = len(self.layer_depths)
         output_depth = self.layer_depths[-1]
-        self.flatten_size = int(input_size**2 * output_depth)
+        if self.pool_every_n_layers > 0:
+            num_pools = num_layers // self.pool_every_n_layers
+            self.flatten_size = int(
+                (input_size // (self.pool_size ** (num_pools)))**2 *
+                output_depth)
+        else:
+            self.flatten_size = int(input_size**2 * output_depth)
 
         self.conv_layers = []
         for (layer_depth,
@@ -89,18 +96,14 @@ class Classifier(tf.Module):
         for i, conv_layer in enumerate(self.conv_layers):
             shortcut = moving_input_tensor
             output_tensor = tf.nn.relu(conv_layer(moving_input_tensor))
-            output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
             if (self.pool_every_n_layers != 0) and \
                ((i + 1) % self.pool_every_n_layers) == 0:
                 output_tensor = tf.nn.max_pool2d(output_tensor, self.pool_size,
                                                  strides=2, padding='VALID')
                 shortcut = tf.nn.max_pool2d(shortcut, self.pool_size,
                                             strides=2, padding='VALID')
-                output_tensor += shortcut
-
-            else:
-                # Residual connection
-                output_tensor += shortcut
+            output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
+            # output_tensor += shortcut
 
             moving_input_tensor = output_tensor
 
