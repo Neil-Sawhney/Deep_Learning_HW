@@ -11,7 +11,7 @@ learning:
   dropout_prob: 0.5
   batch_size: 2000
   num_iters: 5000
-  learning_rate: .00001
+  learning_rate: .0001
   learning_patience: 100
 display:
   refresh_rate: 5

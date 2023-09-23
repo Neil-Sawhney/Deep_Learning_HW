@@ -1,4 +1,3 @@
-import argparse
 from pathlib import Path
 
 import tensorflow as tf
@@ -7,10 +6,12 @@ from tqdm import trange
 
 from helpers.idx_loader import load_idx_data
 from helpers.optimizer import Adam
-from models.classifier import Classifier
+from layers.classifier import Classifier
 
 
-def train_batch_accuracy():
+def train_batch_accuracy(classifier,
+                         train_images_batch,
+                         train_labels_batch):
     return tf.reduce_mean(
         tf.cast(
             tf.equal(
@@ -21,7 +22,9 @@ def train_batch_accuracy():
     )
 
 
-def val_accuracy():
+def val_accuracy(classifier,
+                 val_images,
+                 val_labels):
     return tf.reduce_mean(
         tf.cast(
             tf.equal(
@@ -32,7 +35,9 @@ def val_accuracy():
     )
 
 
-def test_accuracy():
+def test_accuracy(classifier,
+                  test_images,
+                  test_labels):
     return tf.reduce_mean(
         tf.cast(
             tf.equal(
@@ -43,7 +48,13 @@ def test_accuracy():
     )
 
 
-def val_loss(checkpoint, minimum_val_loss, minimum_val_step, current_step):
+def val_loss(classifier,
+             val_images,
+             val_labels,
+             checkpoint,
+             minimum_val_loss,
+             minimum_val_step,
+             current_step):
     validation_loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
             labels=tf.squeeze(val_labels),
@@ -61,21 +72,9 @@ def val_loss(checkpoint, minimum_val_loss, minimum_val_step, current_step):
     return validation_loss, minimum_val_loss, minimum_val_step
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="CNN",
-        description="Uses a multi layer perceptron on some data, \
-                given a config",
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=Path,
-        default=Path("config.yaml")
-    )
-    args = parser.parse_args()
+def run(config_path: Path = Path("configs/classify_numbers_config.yaml")):
 
-    config = yaml.safe_load(args.config.read_text())
+    config = yaml.safe_load(config_path.read_text())
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
@@ -125,9 +124,9 @@ if __name__ == "__main__":
 
     minimum_val_loss = float("inf")
     minimum_val_step = 0
-    validation_loss = 0
+    current_validation_loss = 0
     checkpoint = tf.train.Checkpoint(classifier)
-    manager = tf.train.CheckpointManager(
+    tf.train.CheckpointManager(
         checkpoint, "artifacts/checkpoints/classify_numbers", max_to_keep=1
     )
 
@@ -139,16 +138,14 @@ if __name__ == "__main__":
 
             train_images_batch = tf.gather(train_images, batch_indices)
             train_labels_batch = tf.gather(train_labels, batch_indices)
-            kernel_weights = tf.concat(
-                [tf.reshape(layer.kernel, [-1])
-                 for layer in classifier.conv_layers], axis=0)
-            training_loss = tf.reduce_mean(
+            current_training_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=tf.squeeze(train_labels_batch),
                     logits=classifier(train_images_batch)
                 ))
 
-        grads = tape.gradient(training_loss, classifier.trainable_variables)
+        grads = tape.gradient(current_training_loss,
+                              classifier.trainable_variables)
 
         adam.apply_gradients(
             grads, classifier.trainable_variables
@@ -156,21 +153,38 @@ if __name__ == "__main__":
 
         # If no improvement in validation loss for learning_patience
         # iterations, stop training
-        validation_loss, minimum_val_loss, minimum_val_step = \
-            val_loss(checkpoint, minimum_val_loss, minimum_val_step, i)
+        current_validation_loss, minimum_val_loss, minimum_val_step = \
+            val_loss(classifier,
+                     val_images,
+                     val_labels,
+                     checkpoint,
+                     minimum_val_loss,
+                     minimum_val_step,
+                     i)
 
         if i % refresh_rate == (refresh_rate - 1):
-            bar.set_description(
-                f"Step {i}; Train Loss => {training_loss.numpy():0.4f};" +
-                f" Train Batch Accuracy => {train_batch_accuracy():0.4};" +
-                f" Val Accuracy => {val_accuracy():0.4f}" +
-                f" Val loss => {validation_loss:0.4f}"
+            current_training_loss = current_training_loss.numpy()
+            currect_batch_accuracy = train_batch_accuracy(
+                classifier, train_images_batch, train_labels_batch
             )
+            current_validation_accuracy = val_accuracy(
+                classifier, val_images, val_labels
+            )
+
+            description = (
+                f"Step {i};" +
+                f"Train Loss => {current_training_loss:0.4};" +
+                f"Train Batch Accuracy => {currect_batch_accuracy:0.4};" +
+                f"Val Accuracy => {current_validation_accuracy:0.4};" +
+                f"Val loss => {current_validation_loss:0.4f}")
+
+            bar.set_description(description)
+            bar.refresh()
             bar.refresh()
 
         # if none of the losses in validation_loss are less than the
         # minimum_val_loss
-        if (not validation_loss < minimum_val_loss and
+        if (not current_validation_loss < minimum_val_loss and
                 i - minimum_val_step > learning_patience):
             break
 
@@ -178,6 +192,8 @@ if __name__ == "__main__":
         "artifacts/checkpoints/classify_numbers"
     ).assert_consumed()
 
-    print(f"Final Training Loss => {training_loss.numpy():0.4f}")
+    print(f"Final Training Loss => {current_training_loss.numpy():0.4f}")
     print(f"Stop Iteration => {i}")
-    print(f"Test Accuracy => {test_accuracy():0.4f}")
+
+    final_test_accuracy = test_accuracy(classifier, test_images, test_labels)
+    print(f"Test Accuracy => {final_test_accuracy:0.4f}")

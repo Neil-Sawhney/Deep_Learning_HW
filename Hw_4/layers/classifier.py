@@ -1,6 +1,6 @@
 import tensorflow as tf
 from helpers.conv_2d import Conv2D
-from models.mlp import MLP
+from layers.mlp import MLP
 
 
 class Classifier(tf.Module):
