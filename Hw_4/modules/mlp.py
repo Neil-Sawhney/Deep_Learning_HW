@@ -23,16 +23,13 @@ class MLP(tf.Module):
         self.dropout_prob = dropout_prob
 
     def __call__(self, x):
+        x = self.hidden_activation(self.first_linear(x))
+
         if self.dropout_first_n_layers >= 1:
             x = tf.nn.dropout(x, self.dropout_prob)
 
-        x = self.hidden_activation(self.first_linear(x))
-
-        if self.dropout_first_n_layers >= 2:
-            x = tf.nn.dropout(x, self.dropout_prob)
-
         for i in range(self.num_hidden_layers):
-            if self.dropout_first_n_layers > i + 2:
+            if self.dropout_first_n_layers > i + 1:
                 x = tf.nn.dropout(x, self.dropout_prob)
             x = self.hidden_activation(
                 self.hidden_linear(x)

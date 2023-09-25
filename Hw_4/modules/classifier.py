@@ -83,8 +83,8 @@ class Classifier(tf.Module):
                        self.hidden_layer_width,
                        tf.nn.relu,
                        tf.nn.softmax,
-                       dropout_first_n_layers,
-                       dropout_prob,)
+                       dropout_first_n_layers=dropout_first_n_layers,
+                       dropout_prob=dropout_prob,)
 
         self.shortcut_mlp = MLP(self.flatten_size,
                                 self.num_classes,
@@ -144,5 +144,7 @@ class Classifier(tf.Module):
 
         shortcut_flattened = tf.reshape(shortcut, [-1, self.flatten_size])
         output_flattened = tf.reshape(output_tensor, [-1, self.flatten_size])
-        return self.mlp(output_flattened) + \
-            self.shortcut_mlp(shortcut_flattened)
+
+        output = self.mlp(output_flattened)
+        output += self.shortcut_mlp(shortcut_flattened)
+        return output

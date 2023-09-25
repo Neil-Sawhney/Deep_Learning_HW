@@ -105,7 +105,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     dropout_prob = config["learning"]["dropout_prob"]
     batch_size = config["learning"]["batch_size"]
     learning_patience = config["learning"]["learning_patience"]
-    dropout_first_n_fc_layers = config["learning"]["dropout_first_n_layers"]
+    dropout_first_n_fc_layers = config["learning"]["dropout_first_n_fc_layers"]
     learning_rates = config["learning"]["learning_rates"]
     refresh_rate = config["display"]["refresh_rate"]
     pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
@@ -198,6 +198,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             x_iterations = np.append(x_iterations, i)
 
             description = (
+                f"Minimum Val Loss => {minimum_val_loss:0.4f};\n" +
                 f"Step {i};" +
                 f"Train Loss => {current_training_loss:0.4};" +
                 f"Train Batch Accuracy => {current_batch_accuracy:0.4};" +
@@ -206,16 +207,14 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
             bar.set_description(description)
             bar.refresh()
-            bar.refresh()
 
-        # if none of the losses in validation_loss are less than the
-        # minimum_val_loss
-        if (not current_validation_loss < minimum_val_loss and
-                i - minimum_val_step_num > learning_patience):
-            if learning_rate_index == len(learning_rates) - 1:
-                break
-            learning_rate_index += 1
-            adam.learning_rate = learning_rates[learning_rate_index]
+            # if the validation loss has not improved for learning_patience
+            if (current_validation_loss > minimum_val_loss and
+                    i - minimum_val_step_num > learning_patience):
+                if (learning_rate_index == (len(learning_rates) - 1)):
+                    break
+                learning_rate_index += 1
+                adam.learning_rate = learning_rates[learning_rate_index]
 
     checkpoint_manager.restore_or_initialize()
 
@@ -231,7 +230,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Accuracy")
     ax.legend()
-    ax.set_title("Accuracy vs Iteration")
+    ax.set_title("Accuracy vs Iteration: Test Accuracy = "
+                 + str(format(final_test_accuracy, '.4f')))
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     i = 0
