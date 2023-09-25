@@ -4,7 +4,7 @@ import pytest
 def test_non_additivity():
     import tensorflow as tf
 
-    from layers.basis_expansion import BasisExpansion
+    from modules.basis_expansion import BasisExpansion
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -40,7 +40,7 @@ def test_non_additivity():
 def test_homogeneity():
     import tensorflow as tf
 
-    from layers.basis_expansion import BasisExpansion
+    from modules.basis_expansion import BasisExpansion
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)

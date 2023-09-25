@@ -1,41 +1,26 @@
 #!/usr/bin/env python3
 
 import argparse
-import argcomplete
 import importlib
-import os
+from pathlib import Path
+
+import argcomplete
 
 
 def main():
-    # Get a list of all files in the 'runners' directory
-    runners = os.listdir('runners')
-    configs = os.listdir('configs')
-
-    # remove the .py extension from the files
-    runners = [runner[:-3] for runner in runners]
-    configs = [config[:-5] for config in configs]
-    # remove __init__.py
-    runners.remove('__init__')
-
     parser = argparse.ArgumentParser(description="Choose an example to train:")
-    parser.add_argument("model", type=str, choices=runners,
-                        help="Name of the example to train")
-    parser.add_argument("config", type=str, choices=configs,
+    parser.add_argument("runner", type=Path,
+                        help="Path to the runner file")
+    parser.add_argument("--config", "-c", type=Path,
                         nargs='?', help="Path to the config file")
+    parser.add_argument("--use_last_checkpoint", "-ch", action="store_true",
+                        help="Whether or not to use the last checkpoint")
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
-    runner = importlib.import_module(f"runners.{args.model}")
-    if args.config is None:
-        print(f"You chose to train the {args.model} " +
-              "model with the default config file.")
-        runner.run()
-    else:
-        print(f"You chose to train the {args.model} " +
-              "model with the config file at \
-            {args.config}.")
-        runner.run(args.config)
+    runner = importlib.import_module(f"runners.{args.runner.stem}")
+    runner.run(args.config, args.use_last_checkpoint)
 
 
 if __name__ == "__main__":

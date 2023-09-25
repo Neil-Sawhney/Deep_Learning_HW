@@ -28,6 +28,6 @@ def load_pickle_data(filename: Path):
     # convert from (batch_size, depth, height, width) to
     # (batch_size, height, width, depth)
     data = tf.transpose(data, [0, 2, 3, 1])
-    data = tf.cast(data, tf.float32)
-    data = tf.image.per_image_standardization(data)
+
+    data = tf.cast(data, tf.float32)/255.0
     return labels, data

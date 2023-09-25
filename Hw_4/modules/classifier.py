@@ -1,6 +1,6 @@
 import tensorflow as tf
 from helpers.conv_2d import Conv2D
-from layers.mlp import MLP
+from modules.mlp import MLP
 
 
 class Classifier(tf.Module):
@@ -15,6 +15,7 @@ class Classifier(tf.Module):
             hidden_layer_width: int,
             pool_every_n_layers: int = 0,
             pool_size: int = 2,
+            dropout_first_n_layers: int = 0,
             dropout_prob: float = 0.5,
             ):
         """Initializes the Classifier class
@@ -49,7 +50,6 @@ class Classifier(tf.Module):
         self.hidden_layer_width = hidden_layer_width
         self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
-        self.dropout_prob = dropout_prob
 
         num_layers = len(self.layer_depths)
         output_depth = self.layer_depths[-1]
@@ -62,7 +62,7 @@ class Classifier(tf.Module):
             self.flatten_size = int(input_size**2 * output_depth)
 
         self.conv_layers = []
-        self.shortcut_layers = []
+        self.shortcut_conv_layers = []
         for (layer_depth,
              layer_kernel_size) in zip(
                  self.layer_depths,
@@ -70,17 +70,26 @@ class Classifier(tf.Module):
             self.conv_layers.append(Conv2D(input_depth,
                                            layer_depth,
                                            layer_kernel_size))
-            self.shortcut_layers.append(Conv2D(input_depth,
-                                               layer_depth,
-                                               [1, 1],
-                                               bias=False))
+            self.shortcut_conv_layers.append(Conv2D(input_depth,
+                                             layer_depth,
+                                             [1, 1],
+                                             bias=False))
             input_depth = layer_depth
 
+        # TODO: do we want the softmax output activation?
         self.mlp = MLP(self.flatten_size,
                        self.num_classes,
                        self.num_hidden_layers,
                        self.hidden_layer_width,
-                       tf.nn.relu)
+                       tf.nn.relu,
+                       tf.nn.softmax,
+                       dropout_first_n_layers,
+                       dropout_prob,)
+
+        self.shortcut_mlp = MLP(self.flatten_size,
+                                self.num_classes,
+                                self.num_hidden_layers,
+                                self.hidden_layer_width,)
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
@@ -100,18 +109,28 @@ class Classifier(tf.Module):
         moving_input_tensor = input_tensor
         for (i,
              (conv_layer, shortcut_layer)
-             ) in enumerate(zip(self.conv_layers, self.shortcut_layers)):
+             ) in enumerate(zip(self.conv_layers, self.shortcut_conv_layers)):
             shortcut = moving_input_tensor
 
             output_tensor = tf.nn.relu(conv_layer(moving_input_tensor))
+            # TODO: is this right?
+            output_tensor = tf.nn.batch_normalization(
+                output_tensor,
+                mean=0,
+                variance=1,
+                offset=None,
+                scale=None,
+                variance_epsilon=1e-7,
+            )
             shortcut = shortcut_layer(shortcut)
+
+            # If we are pooling every n layers and this is the nth layer
             if (self.pool_every_n_layers != 0) and \
                ((i + 1) % self.pool_every_n_layers) == 0:
                 output_tensor = tf.nn.max_pool2d(output_tensor, self.pool_size,
                                                  strides=2, padding='VALID')
                 shortcut = tf.nn.max_pool2d(shortcut, self.pool_size,
                                             strides=2, padding='VALID')
-            output_tensor = tf.nn.dropout(output_tensor, self.dropout_prob)
 
             output_tensor += shortcut
 
@@ -122,5 +141,8 @@ class Classifier(tf.Module):
                                  output_tensor.shape[3]):
             raise ValueError(
                 "Flatten size does not match output tensor shape")
+
+        shortcut_flattened = tf.reshape(shortcut, [-1, self.flatten_size])
         output_flattened = tf.reshape(output_tensor, [-1, self.flatten_size])
-        return self.mlp(output_flattened)
+        return self.mlp(output_flattened) + \
+            self.shortcut_mlp(shortcut_flattened)

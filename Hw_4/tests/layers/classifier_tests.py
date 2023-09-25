@@ -17,7 +17,7 @@ def test_dimensionality(input_depth,
                         pool_every_n_layers,
                         pool_size):
     import tensorflow as tf
-    from layers.classifier import Classifier
+    from modules.classifier import Classifier
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)

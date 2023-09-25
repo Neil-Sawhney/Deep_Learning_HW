@@ -17,5 +17,6 @@ def augment_data(images: tf.Tensor, augmentations: int):
         tf.Tensor: A tensor of the shape
         [batch_size, height, width, channels*augmentations]
     """
+    # TODO: idk what i'm doing here
     augmentations_per_type = augmentations // 4
     # apply augmentations_per_type rotations of various degrees

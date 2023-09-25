@@ -4,7 +4,7 @@ import pytest
 def test_additivity():
     import tensorflow as tf
 
-    from layers.linear import Linear
+    from modules.linear import Linear
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -23,7 +23,7 @@ def test_additivity():
 def test_homogeneity():
     import tensorflow as tf
 
-    from layers.linear import Linear
+    from modules.linear import Linear
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -44,7 +44,7 @@ def test_homogeneity():
 def test_dimensionality(num_outputs):
     import tensorflow as tf
 
-    from layers.linear import Linear
+    from modules.linear import Linear
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -63,7 +63,7 @@ def test_dimensionality(num_outputs):
 def test_trainable(bias):
     import tensorflow as tf
 
-    from layers.linear import Linear
+    from modules.linear import Linear
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -104,7 +104,7 @@ def test_trainable(bias):
 def test_init_properties(a_shape, b_shape):
     import tensorflow as tf
 
-    from layers.linear import Linear
+    from modules.linear import Linear
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)
@@ -124,7 +124,7 @@ def test_init_properties(a_shape, b_shape):
 def test_bias():
     import tensorflow as tf
 
-    from layers.linear import Linear
+    from modules.linear import Linear
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(2384230948)

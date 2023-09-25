@@ -6,7 +6,7 @@ from tqdm import trange
 
 from helpers.load_idx_data import load_idx_data
 from helpers.optimizer import Adam
-from layers.classifier import Classifier
+from modules.classifier import Classifier
 
 
 def train_batch_accuracy(classifier,

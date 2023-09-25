@@ -7,7 +7,7 @@ class Conv2D(tf.Module):
                  output_channels: int,
                  kernel_shape: tuple[int, int],
                  stride: int = 1,
-                 bias: bool = True):
+                 bias: bool = True,):
         """Initializes the Conv2D class
 
         Args:
@@ -27,7 +27,7 @@ class Conv2D(tf.Module):
 
         # He initialization
         stddev = tf.sqrt(2 /
-                         (input_channels * kernel_shape[0] * kernel_shape[1]))
+                         (output_channels * kernel_shape[0] * kernel_shape[1]))
 
         self.kernel = tf.Variable(
             rng.normal(
