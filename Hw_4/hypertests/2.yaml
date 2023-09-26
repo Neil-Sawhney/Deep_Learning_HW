@@ -1,6 +1,6 @@
 cnn:
-  layer_depths: [30, 30, 30, 30, 30]
-  kernel_sizes: [[2,2], [2,2], [3,3], [3,3], [3,3]]
+  layer_depths: [50, 50]
+  kernel_sizes: [[2,2], [2,2]]
   pool_every_n_layers: 2
   pool_size: 2
   resblock_size: 2

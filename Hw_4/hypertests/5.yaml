@@ -16,6 +16,6 @@ learning:
   batch_size: 2000
   num_iters: 5000
   learning_rates: [.001, .0005, .0002, .0001, .00005]
-  learning_patience: 200 
+  learning_patience: 500 
 display:
   refresh_rate: 5

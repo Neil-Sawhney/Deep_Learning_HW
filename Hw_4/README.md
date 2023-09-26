@@ -3,7 +3,7 @@
 - Install Requirements and Data with ``` ./setup.sh ```
     - You may have to run ``` chmod +x ./setup.sh ``` first.
 
-- Run an example in the ``` ./runners ``` directory. e.g. ``` main.py ./runners/classify_numbers.py ```.
+- Run an example in the ``` ./runners ``` directory. e.g. ``` main.py ./runners/classify_cifar10.py ```.
     - Change parameters in the ``` configs ``` directory (or create your own).
 
 - View the results in ``` ./artifacts ```.
