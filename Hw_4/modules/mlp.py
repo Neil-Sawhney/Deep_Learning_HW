@@ -9,7 +9,7 @@ class MLP(tf.Module):
                  output_activation=tf.identity,
                  dropout_first_n_layers=0,
                  dropout_prob=0.5,
-                 zero_init=False):
+                 zero_init=False,):
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         self.num_hidden_layers = num_hidden_layers

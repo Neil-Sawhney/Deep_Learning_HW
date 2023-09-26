@@ -1,6 +1,7 @@
 import tensorflow as tf
 from helpers.conv_2d import Conv2D
 from modules.mlp import MLP
+from modules.linear import Linear
 
 
 class Classifier(tf.Module):
@@ -76,10 +77,10 @@ class Classifier(tf.Module):
             self.shortcut_conv_layers.append(Conv2D(input_depth,
                                              layer_depth,
                                              [1, 1],
-                                             bias=False))
+                                             bias_enabled=False,
+                                             identity=True,))
             input_depth = layer_depth
 
-        # TODO: do we want the softmax output activation?
         self.mlp = MLP(self.flatten_size,
                        self.num_classes,
                        self.num_hidden_layers,
@@ -89,11 +90,9 @@ class Classifier(tf.Module):
                        dropout_prob=dropout_prob,
                        zero_init=True,)
 
-        # self.shortcut_mlp = MLP(self.flatten_size,
-        #                         self.num_classes,
-        #                         self.num_hidden_layers,
-        #                         self.hidden_layer_width,
-        #                         zero_init=True,)
+        self.shortcut_linear = Linear(self.flatten_size,
+                                      self.num_classes,
+                                      identity=True,)
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
@@ -138,9 +137,10 @@ class Classifier(tf.Module):
             raise ValueError(
                 "Flatten size does not match output tensor shape")
 
-        # shortcut_flattened = tf.reshape(shortcut, [-1, self.flatten_size])
+        shortcut_flattened = tf.reshape(shortcut, [-1, self.flatten_size])
         output_flattened = tf.reshape(output_tensor, [-1, self.flatten_size])
 
         output = self.mlp(output_flattened)
-        # output += self.shortcut_mlp(shortcut_flattened)
+        output += self.shortcut_linear(shortcut_flattened)
+
         return output
