@@ -295,10 +295,10 @@ def run(config_path: Path, use_last_checkpoint: bool):
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     file_index = 0
-    while Path(f"artifacts/logs/classify_cifar10_{file_index}.png").exists():
+    while Path(f"artifacts/classify_cifar10_{file_index}.png").exists():
         file_index += 1
-    fig.savefig(f"artifacts/logs/classify_cifar10_{file_index}.png")
-    with open(f"artifacts/logs/classify_cifar10_log_{file_index}.txt", "w") as file:
+    fig.savefig(f"artifacts/classify_cifar10_{file_index}.png")
+    with open(f"artifacts/classify_cifar10_log_{file_index}.txt", "w") as file:
         file.write(f"Config => {config}\n")
         file.write(f"Test Accuracy => {final_test_accuracy:0.4f}\n")
         file.write(f"Stop Iteration => {file_index}\n")
