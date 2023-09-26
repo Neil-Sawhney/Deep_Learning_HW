@@ -270,7 +270,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     # plot vertical line on learning rate change
     for learning_rate_change_step in learning_rate_change_steps:
         ax[0].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
-    ax[0].set_xlabel("Iteration")
+    ax[0].set_xlabel("Iterations")
     ax[0].set_ylabel("Accuracy")
     ax[0].legend()
 
@@ -278,7 +278,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     ax[1].semilogy(x_loss_iterations, y_val_loss, label="Val Loss")
     for learning_rate_change_step in learning_rate_change_steps:
         ax[1].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
-    ax[1].set_xlabel("Iteration")
+    ax[1].set_xlabel("Iterations")
     ax[1].set_ylabel("Loss")
     ax[1].legend()
 
@@ -288,8 +288,14 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     final_test_accuracy = test_accuracy(classifier, test_images, test_labels)
     print(f"Test Accuracy => {final_test_accuracy:0.4f}")
+    i = 0
+    while Path(f"artifacts/logs/classify_cifar10_log_{i}.txt").exists():
+        i += 1
+    with open(f"artifacts/logs/classify_cifar10_log_{i}.txt", "w") as file:
+        file.write(f"Config => {config}\n")
+        file.write(f"Test Accuracy => {final_test_accuracy:0.4f}\n")
+        file.write(f"Stop Iteration => {i}\n")
 
-    # set overall title
     fig.suptitle("Classify Cifar10: Test Accuracy = " + str(final_test_accuracy))
 
     # if the file already exists add a number to the end of the file name
