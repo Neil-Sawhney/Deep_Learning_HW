@@ -14,7 +14,6 @@ class Classifier(tf.Module):
             input_size: int,
             num_hidden_layers: int,
             hidden_layer_width: int,
-            resblock_size: int = 2,
             pool_every_n_layers: int = 0,
             pool_size: int = 2,
             dropout_first_n_layers: int = 0,
@@ -50,11 +49,9 @@ class Classifier(tf.Module):
         self.input_size = input_size
         self.num_hidden_layers = num_hidden_layers
         self.hidden_layer_width = hidden_layer_width
-        self.resblock_size = resblock_size
         self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
 
-        # TODO: implement resblock size
         num_layers = len(self.layer_depths)
         output_depth = self.layer_depths[-1]
         if self.pool_every_n_layers > 0:
@@ -77,8 +74,7 @@ class Classifier(tf.Module):
             self.shortcut_conv_layers.append(Conv2D(input_depth,
                                              layer_depth,
                                              [1, 1],
-                                             bias_enabled=False,
-                                             identity=True,))
+                                             bias_enabled=False,))
             input_depth = layer_depth
 
         self.mlp = MLP(self.flatten_size,
@@ -86,13 +82,14 @@ class Classifier(tf.Module):
                        self.num_hidden_layers,
                        self.hidden_layer_width,
                        tf.nn.relu,
+                       tf.nn.softmax,
                        dropout_first_n_layers=dropout_first_n_layers,
-                       dropout_prob=dropout_prob,
-                       zero_init=True,)
+                       dropout_prob=dropout_prob,)
 
         self.shortcut_linear = Linear(self.flatten_size,
                                       self.num_classes,
-                                      identity=True,)
+                                      bias=False,
+                                      zero_init=True,)
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
