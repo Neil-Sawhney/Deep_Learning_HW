@@ -28,5 +28,5 @@ class Adam:
             v_hat = v / (1 - self.beta_2)
             var.assign(var - self.learning_rate * m_hat /
                        (tf.sqrt(v_hat) + self.epsilon))
-            if var.name.endswith('kernel'):
-                var.assign(var - self.weight_decay * var)
+            if (var.name.endswith('kernel') or var.name.endswith('w')):
+                var.assign(var - self.weight_decay * var * self.learning_rate)

@@ -113,15 +113,7 @@ class Classifier(tf.Module):
             shortcut = moving_input_tensor
 
             output_tensor = tf.nn.relu(conv_layer(moving_input_tensor))
-            # TODO: is this right?
-            output_tensor = tf.nn.batch_normalization(
-                output_tensor,
-                mean=0,
-                variance=1,
-                offset=None,
-                scale=None,
-                variance_epsilon=1e-7,
-            )
+            # TODO: group norm
             shortcut = shortcut_layer(shortcut)
 
             # If we are pooling every n layers and this is the nth layer

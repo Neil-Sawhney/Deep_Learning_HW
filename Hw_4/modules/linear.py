@@ -2,17 +2,23 @@ import tensorflow as tf
 
 
 class Linear(tf.Module):
-    def __init__(self, num_inputs, num_outputs, bias=True):
+    def __init__(self, num_inputs, num_outputs, bias=True, zero_init=False):
         rng = tf.random.get_global_generator()
 
         stddev = tf.math.sqrt(2 / (num_inputs + num_outputs))
 
-        # initialize weights to random values from a normal distribution
-        self.w = tf.Variable(
-            rng.normal(shape=[num_inputs, num_outputs], stddev=stddev),
-            trainable=True,
-            name="Linear/w",
-        )
+        if zero_init:
+            self.w = tf.Variable(
+                tf.zeros(shape=[num_inputs, num_outputs]),
+                trainable=True,
+                name="Linear/w",
+            )
+        else:
+            self.w = tf.Variable(
+                rng.normal(shape=[num_inputs, num_outputs], stddev=stddev),
+                trainable=True,
+                name="Linear/w",
+            )
 
         self.bias = bias
 

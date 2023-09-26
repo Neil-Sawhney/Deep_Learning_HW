@@ -18,7 +18,8 @@ class MLP(tf.Module):
         self.hidden_linear = Linear(self.hidden_layer_width,
                                     self.hidden_layer_width)
         self.first_linear = Linear(num_inputs, hidden_layer_width)
-        self.final_linear = Linear(self.hidden_layer_width, self.num_outputs)
+        self.final_linear = Linear(self.hidden_layer_width, self.num_outputs,
+                                   zero_init=True)
         self.dropout_first_n_layers = dropout_first_n_layers
         self.dropout_prob = dropout_prob
 

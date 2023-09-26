@@ -3,8 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import tqdm
 import yaml
-from tqdm import trange
 
 from helpers.load_pickle_data import load_pickle_data
 from helpers.optimizer import Adam
@@ -133,8 +133,16 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     # Used For Plotting
     y_train_batch_accuracy = np.array([])
+    y_train_batch_loss = np.array([])
     y_val_accuracy = np.array([])
+    y_val_loss = np.array([])
     x_iterations = np.array([])
+
+    # Index of the current learning rate, used to change the learning rate
+    # when the validation loss stops improving
+    learning_rate_index = 0
+    adam = Adam(learning_rates[learning_rate_index],
+                weight_decay=weight_decay,)
 
     checkpoint = tf.train.Checkpoint(classifier)
     checkpoint_manager = tf.train.CheckpointManager(
@@ -143,13 +151,15 @@ def run(config_path: Path, use_last_checkpoint: bool):
     if use_last_checkpoint:
         checkpoint_manager.restore_or_initialize()
 
-    # Index of the current learning rate, used to change the learning rate
-    # when the validation loss stops improving
-    learning_rate_index = 0
-    adam = Adam(learning_rates[learning_rate_index],
-                weight_decay=weight_decay,)
+    overall_log = tqdm.tqdm(total=0, position=1, bar_format='{desc}')
+    train_log = tqdm.tqdm(total=0, position=2, bar_format='{desc}')
+    val_log = tqdm.tqdm(total=0, position=3, bar_format='{desc}')
+    bar = tqdm.trange(num_iters, position=4)
 
-    bar = trange(num_iters)
+    num_of_parameters = tf.math.add_n([tf.math.reduce_prod(var.shape) for var
+                                       in classifier.trainable_variables])
+    print(f"\nNumber of Parameters => {num_of_parameters}")
+
     for i in bar:
         batch_indices = rng.uniform(
             shape=[batch_size], maxval=num_samples, dtype=tf.int32
@@ -158,13 +168,17 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
             train_images_batch = tf.gather(train_images, batch_indices)
             train_labels_batch = tf.gather(train_labels, batch_indices)
-            current_training_loss = tf.reduce_mean(
+            current_train_batch_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=tf.squeeze(train_labels_batch),
                     logits=classifier(train_images_batch)
                 ))
 
-        grads = tape.gradient(current_training_loss,
+        # Print initial train batch loss
+        if i == 0:
+            print(f"Initial Training Loss => {current_train_batch_loss:0.4f}")
+
+        grads = tape.gradient(current_train_batch_loss,
                               classifier.trainable_variables)
 
         adam.apply_gradients(
@@ -183,7 +197,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
                      i)
 
         if i % refresh_rate == (refresh_rate - 1):
-            current_training_loss = current_training_loss.numpy()
+            current_train_batch_loss = current_train_batch_loss.numpy()
             current_batch_accuracy = train_batch_accuracy(
                 classifier, train_images_batch, train_labels_batch
             )
@@ -193,19 +207,32 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
             y_train_batch_accuracy = np.append(y_train_batch_accuracy,
                                                current_batch_accuracy)
+            y_train_batch_loss = np.append(y_train_batch_loss,
+                                           current_train_batch_loss)
             y_val_accuracy = np.append(y_val_accuracy,
                                        current_validation_accuracy)
+            y_val_loss = np.append(y_val_loss, current_validation_loss)
             x_iterations = np.append(x_iterations, i)
 
-            description = (
-                f"Minimum Val Loss => {minimum_val_loss:0.4f};\n" +
-                f"Step {i};" +
-                f"Train Loss => {current_training_loss:0.4};" +
-                f"Train Batch Accuracy => {current_batch_accuracy:0.4};" +
-                f"Val Accuracy => {current_validation_accuracy:0.4};" +
-                f"Val loss => {current_validation_loss:0.4f}")
+            overall_description = (
+                f"\n\nMinimum Val Loss => {minimum_val_loss:0.4f}\t" +
+                f"Step {i}\t" +
+                f"Learning Rate => {adam.learning_rate:0.4f}\t")
+            overall_log.set_description_str(overall_description)
+            overall_log.refresh()
 
-            bar.set_description(description)
+            train_description = (
+                f"Train Batch Loss => {current_train_batch_loss:0.4f}\t" +
+                f"Train Accuracy => {current_batch_accuracy:0.4f}\t")
+            train_log.set_description_str(train_description)
+            train_log.update(refresh_rate)
+
+            val_description = (
+                f"Val Loss => {current_validation_loss:0.4f}\t" +
+                f"Val Accuracy => {current_validation_accuracy:0.4f}\t")
+            val_log.set_description_str(val_description)
+            val_log.update(refresh_rate)
+
             bar.refresh()
 
             # if the validation loss has not improved for learning_patience
@@ -215,23 +242,35 @@ def run(config_path: Path, use_last_checkpoint: bool):
                     break
                 learning_rate_index += 1
                 adam.learning_rate = learning_rates[learning_rate_index]
+                checkpoint_manager.restore_or_initialize()
 
     checkpoint_manager.restore_or_initialize()
 
-    print(f"Final Training Loss => {current_training_loss:0.4f}")
+    print(f"Final Training Loss => {current_train_batch_loss:0.4f}")
     print(f"Stop Iteration => {i}")
 
     final_test_accuracy = test_accuracy(classifier, test_images, test_labels)
     print(f"Test Accuracy => {final_test_accuracy:0.4f}")
 
-    fig, ax = plt.subplots()
-    ax.plot(x_iterations, y_train_batch_accuracy, label="Train Accuracy")
-    ax.plot(x_iterations, y_val_accuracy, label="Val Accuracy")
-    ax.set_xlabel("Iteration")
-    ax.set_ylabel("Accuracy")
-    ax.legend()
-    ax.set_title("Accuracy vs Iteration: Test Accuracy = "
-                 + str(format(final_test_accuracy, '.4f')))
+    fig, ax = plt.subplots(2, 1)
+    ax[0].plot(x_iterations, y_train_batch_accuracy, label="Train Accuracy")
+    ax[0].plot(x_iterations, y_val_accuracy, label="Val Accuracy")
+    ax[0].set_xlabel("Iteration")
+    ax[0].set_ylabel("Accuracy")
+    ax[0].legend()
+    ax[0].set_title("Accuracy vs Iterations")
+
+    ax[1].plot(x_iterations, y_train_batch_loss, label="Train Loss")
+    ax[1].plot(x_iterations, y_val_loss, label="Val Loss")
+    ax[1].set_xlabel("Iteration")
+    ax[1].set_ylabel("Loss")
+    ax[1].legend()
+    ax[1].set_title("Loss vs Iterations")
+
+    # set overall title
+    fig.suptitle("Classify Cifar10: Test Accuracy = " +
+                 str(final_test_accuracy))
+
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     i = 0
