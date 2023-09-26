@@ -14,6 +14,7 @@ class Classifier(tf.Module):
             input_size: int,
             num_hidden_layers: int,
             hidden_layer_width: int,
+            resblock_size: int = 2,
             pool_every_n_layers: int = 0,
             pool_size: int = 2,
             dropout_first_n_layers: int = 0,
@@ -51,6 +52,8 @@ class Classifier(tf.Module):
         self.hidden_layer_width = hidden_layer_width
         self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
+        # TODO: Implement this
+        self.resblock_size = resblock_size
 
         num_layers = len(self.layer_depths)
         output_depth = self.layer_depths[-1]
@@ -82,13 +85,12 @@ class Classifier(tf.Module):
                        self.num_hidden_layers,
                        self.hidden_layer_width,
                        tf.nn.relu,
-                       tf.nn.softmax,
                        dropout_first_n_layers=dropout_first_n_layers,
-                       dropout_prob=dropout_prob,)
+                       dropout_prob=dropout_prob,
+                       zero_init=True,)
 
         self.shortcut_linear = Linear(self.flatten_size,
                                       self.num_classes,
-                                      bias=False,
                                       zero_init=True,)
 
     def __call__(self, input_tensor: tf.Tensor):

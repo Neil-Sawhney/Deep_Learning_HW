@@ -6,22 +6,14 @@ class Linear(tf.Module):
                  num_inputs,
                  num_outputs,
                  bias=True,
-                 zero_init=False,
-                 identity=False):
+                 zero_init=False,):
         rng = tf.random.get_global_generator()
 
         stddev = tf.math.sqrt(2 / (num_inputs + num_outputs))
 
         self.bias = bias
 
-        if identity:
-            self.w = tf.Variable(
-                tf.eye(num_inputs, num_outputs),
-                trainable=True,
-                name="Linear/w",
-            )
-
-        elif zero_init:
+        if zero_init:
             self.w = tf.Variable(
                 tf.zeros(shape=[num_inputs, num_outputs]),
                 trainable=True,
