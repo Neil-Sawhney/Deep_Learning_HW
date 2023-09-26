@@ -146,7 +146,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     checkpoint = tf.train.Checkpoint(classifier)
     checkpoint_manager = tf.train.CheckpointManager(
-        checkpoint, "artifacts/checkpoints/classify_numbers", max_to_keep=1
+        checkpoint, "temp/checkpoints/classify_numbers", max_to_keep=1
     )
     if use_last_checkpoint:
         checkpoint_manager.restore_or_initialize()
