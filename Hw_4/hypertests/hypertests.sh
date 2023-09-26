@@ -6,4 +6,3 @@
 git add -A
 git commit -m "hypertests"
 git push
-sudo shutdown -h now
