@@ -288,19 +288,15 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     final_test_accuracy = test_accuracy(classifier, test_images, test_labels)
     print(f"Test Accuracy => {final_test_accuracy:0.4f}")
-    i = 0
-    while Path(f"artifacts/logs/classify_cifar10_log_{i}.txt").exists():
-        i += 1
-    with open(f"artifacts/logs/classify_cifar10_log_{i}.txt", "w") as file:
-        file.write(f"Config => {config}\n")
-        file.write(f"Test Accuracy => {final_test_accuracy:0.4f}\n")
-        file.write(f"Stop Iteration => {i}\n")
-
     fig.suptitle("Classify Cifar10: Test Accuracy = " + str(final_test_accuracy))
 
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     i = 0
-    while Path(f"artifacts/images/classify_cifar10_accuracy_{i}.png").exists():
+    while Path(f"artifacts/logs/classify_cifar10_accuracy_{i}.png").exists():
         i += 1
-    fig.savefig(f"artifacts/images/classify_cifar10_accuracy_{i}.png")
+    fig.savefig(f"artifacts/logs/classify_cifar10_accuracy_{i}.png")
+    with open(f"artifacts/logs/classify_cifar10_log_{i}.txt", "w") as file:
+        file.write(f"Config => {config}\n")
+        file.write(f"Test Accuracy => {final_test_accuracy:0.4f}\n")
+        file.write(f"Stop Iteration => {i}\n")
