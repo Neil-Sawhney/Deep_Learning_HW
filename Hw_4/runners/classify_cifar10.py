@@ -138,6 +138,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
     y_val_loss = np.array([])
     x_iterations = np.array([])
 
+    learning_rate_change_steps = np.array([])
+
     # Index of the current learning rate, used to change the learning rate
     # when the validation loss stops improving
     learning_rate_index = 0
@@ -176,6 +178,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
         # Print initial train batch loss
         if i == 0:
+            print("\n\n\n\n")
             print(f"Initial Training Loss => {current_train_batch_loss:0.4f}")
 
         grads = tape.gradient(current_train_batch_loss,
@@ -216,7 +219,6 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
             overall_description = (
                 f"Minimum Val Loss => {minimum_val_loss:0.4f}    " +
-                f"Step => {i}    " +
                 f"Learning Rate => {adam.learning_rate:0.4f}    ")
             overall_log.set_description_str(overall_description)
             overall_log.refresh()
@@ -233,6 +235,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
             val_log.set_description_str(val_description)
             val_log.update(refresh_rate)
 
+            bar_description = (f"Step => {i}")
+            bar.set_description(bar_description)
             bar.refresh()
 
             # if the validation loss has not improved for learning_patience
@@ -242,6 +246,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
                     break
                 learning_rate_index += 1
                 adam.learning_rate = learning_rates[learning_rate_index]
+                learning_rate_change_steps = np.append(
+                    learning_rate_change_steps, i)
                 checkpoint_manager.restore_or_initialize()
 
     checkpoint_manager.restore_or_initialize()
@@ -255,6 +261,10 @@ def run(config_path: Path, use_last_checkpoint: bool):
     fig, ax = plt.subplots(2, 1)
     ax[0].plot(x_iterations, y_train_batch_accuracy, label="Train Accuracy")
     ax[0].plot(x_iterations, y_val_accuracy, label="Val Accuracy")
+    # plot vertical line on learning rate change
+    for learning_rate_change_step in learning_rate_change_steps:
+        ax[0].axvline(x=learning_rate_change_step, color="black",
+                      linestyle="dashed")
     ax[0].set_xlabel("Iteration")
     ax[0].set_ylabel("Accuracy")
     ax[0].legend()
@@ -262,6 +272,9 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     ax[1].plot(x_iterations, y_train_batch_loss, label="Train Loss")
     ax[1].plot(x_iterations, y_val_loss, label="Val Loss")
+    for learning_rate_change_step in learning_rate_change_steps:
+        ax[1].axvline(x=learning_rate_change_step, color="black",
+                      linestyle="dashed")
     ax[1].set_xlabel("Iteration")
     ax[1].set_ylabel("Loss")
     ax[1].legend()

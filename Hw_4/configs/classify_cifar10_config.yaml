@@ -1,5 +1,5 @@
 cnn:
-  layer_depths: [32, 16, 20, 30, 32]
+  layer_depths: [20, 20, 20, 20, 20]
   kernel_sizes: [[5,5], [4,4], [3,3], [3,3], [3,3]]
   pool_every_n_layers: 3
   pool_size: 2
@@ -12,7 +12,7 @@ learning:
   dropout_prob: 0.00000001
   batch_size: 2000
   num_iters: 5000
-  learning_rates: [.0001, .00005, .00001, .000005, .000001]
-  learning_patience: 200
+  learning_rates: [.0005, .0001, .00005, .00001]
+  learning_patience: 20
 display:
   refresh_rate: 5
