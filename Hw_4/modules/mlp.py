@@ -8,7 +8,8 @@ class MLP(tf.Module):
                  hidden_layer_width, hidden_activation=tf.identity,
                  output_activation=tf.identity,
                  dropout_first_n_layers=0,
-                 dropout_prob=0.5):
+                 dropout_prob=0.5,
+                 zero_init=False):
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         self.num_hidden_layers = num_hidden_layers
@@ -19,7 +20,7 @@ class MLP(tf.Module):
                                     self.hidden_layer_width)
         self.first_linear = Linear(num_inputs, hidden_layer_width)
         self.final_linear = Linear(self.hidden_layer_width, self.num_outputs,
-                                   zero_init=True)
+                                   zero_init=zero_init)
         self.dropout_first_n_layers = dropout_first_n_layers
         self.dropout_prob = dropout_prob
 

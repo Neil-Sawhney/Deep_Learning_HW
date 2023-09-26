@@ -13,6 +13,7 @@ class Classifier(tf.Module):
             input_size: int,
             num_hidden_layers: int,
             hidden_layer_width: int,
+            resblock_size: int = 2,
             pool_every_n_layers: int = 0,
             pool_size: int = 2,
             dropout_first_n_layers: int = 0,
@@ -48,9 +49,11 @@ class Classifier(tf.Module):
         self.input_size = input_size
         self.num_hidden_layers = num_hidden_layers
         self.hidden_layer_width = hidden_layer_width
+        self.resblock_size = resblock_size
         self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
 
+        # TODO: implement resblock size
         num_layers = len(self.layer_depths)
         output_depth = self.layer_depths[-1]
         if self.pool_every_n_layers > 0:
@@ -82,14 +85,15 @@ class Classifier(tf.Module):
                        self.num_hidden_layers,
                        self.hidden_layer_width,
                        tf.nn.relu,
-                       tf.nn.softmax,
                        dropout_first_n_layers=dropout_first_n_layers,
-                       dropout_prob=dropout_prob,)
+                       dropout_prob=dropout_prob,
+                       zero_init=True,)
 
-        self.shortcut_mlp = MLP(self.flatten_size,
-                                self.num_classes,
-                                self.num_hidden_layers,
-                                self.hidden_layer_width,)
+        # self.shortcut_mlp = MLP(self.flatten_size,
+        #                         self.num_classes,
+        #                         self.num_hidden_layers,
+        #                         self.hidden_layer_width,
+        #                         zero_init=True,)
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
@@ -134,9 +138,9 @@ class Classifier(tf.Module):
             raise ValueError(
                 "Flatten size does not match output tensor shape")
 
-        shortcut_flattened = tf.reshape(shortcut, [-1, self.flatten_size])
+        # shortcut_flattened = tf.reshape(shortcut, [-1, self.flatten_size])
         output_flattened = tf.reshape(output_tensor, [-1, self.flatten_size])
 
         output = self.mlp(output_flattened)
-        output += self.shortcut_mlp(shortcut_flattened)
+        # output += self.shortcut_mlp(shortcut_flattened)
         return output
