@@ -4,16 +4,18 @@ cnn:
   pool_every_n_layers: 2
   pool_size: 2
   resblock_size: 2
+  num_classes: 10
+  num_augmentations: 1
 mlp:
   num_hidden_layers: 4
   hidden_layer_width: 1024
 learning:
-  weight_decay: 0.05
+  weight_decay: 0.002
   dropout_first_n_fc_layers: 2
   dropout_prob: 0.5
   batch_size: 2000
   num_iters: 5000
-  learning_rates: [.001, .001, .0005, .0005, .0004, .0002, .0001, .000008, .000005]
+  learning_rates: [.001, .0005, .0004, .0002, .0001, .00005]
   learning_patience: 200 
 display:
   refresh_rate: 5

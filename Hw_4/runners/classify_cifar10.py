@@ -6,6 +6,7 @@ import tensorflow as tf
 import tqdm
 import yaml
 
+from helpers.augment_data import augment_data
 from helpers.load_pickle_data import load_pickle_data
 from helpers.optimizer import Adam
 from modules.classifier import Classifier
@@ -74,6 +75,25 @@ def run(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
         config_path = Path("configs/classify_cifar10_config.yaml")
 
+    config = yaml.safe_load(config_path.read_text())
+    layer_depths = config["cnn"]["layer_depths"]
+    kernel_sizes = config["cnn"]["kernel_sizes"]
+    pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
+    resblock_size = config["cnn"]["resblock_size"]
+    pool_size = config["cnn"]["pool_size"]
+    num_classes = config["cnn"]["num_classes"]
+    num_augmentations = config["cnn"]["num_augmentations"]
+    num_iters = config["learning"]["num_iters"]
+    weight_decay = config["learning"]["weight_decay"]
+    dropout_prob = config["learning"]["dropout_prob"]
+    batch_size = config["learning"]["batch_size"]
+    learning_patience = config["learning"]["learning_patience"]
+    dropout_first_n_fc_layers = config["learning"]["dropout_first_n_fc_layers"]
+    learning_rates = config["learning"]["learning_rates"]
+    refresh_rate = config["display"]["refresh_rate"]
+    num_hidden_layers = config["mlp"]["num_hidden_layers"]
+    hidden_layer_width = config["mlp"]["hidden_layer_width"]
+
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
@@ -92,25 +112,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     test_labels, test_images = load_pickle_data("data/cifar-10-batches-py/test_batch")
 
-    config = yaml.safe_load(config_path.read_text())
-    layer_depths = config["cnn"]["layer_depths"]
-    kernel_sizes = config["cnn"]["kernel_sizes"]
-    pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
-    resblock_size = config["cnn"]["resblock_size"]
-    pool_size = config["cnn"]["pool_size"]
-    num_iters = config["learning"]["num_iters"]
-    weight_decay = config["learning"]["weight_decay"]
-    dropout_prob = config["learning"]["dropout_prob"]
-    batch_size = config["learning"]["batch_size"]
-    learning_patience = config["learning"]["learning_patience"]
-    dropout_first_n_fc_layers = config["learning"]["dropout_first_n_fc_layers"]
-    learning_rates = config["learning"]["learning_rates"]
-    refresh_rate = config["display"]["refresh_rate"]
-    num_hidden_layers = config["mlp"]["num_hidden_layers"]
-    hidden_layer_width = config["mlp"]["hidden_layer_width"]
     num_samples = train_images.shape[0]
     input_depth = train_images.shape[-1]
-    num_classes = 10
     classifier = Classifier(
         input_depth,
         layer_depths,
@@ -176,7 +179,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
             current_train_batch_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=tf.squeeze(train_labels_batch),
-                    logits=classifier(train_images_batch),
+                    logits=classifier(
+                        augment_data(train_images_batch, num_augmentations)),
                 )
             )
 
@@ -263,9 +267,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     fig, ax = plt.subplots(2, 1)
 
-    ax[0].plot(
-        x_accuracy_iterations, y_train_batch_accuracy, label="Train Accuracy"
-    )
+    ax[0].plot(x_accuracy_iterations, y_train_batch_accuracy, label="Train Accuracy")
     ax[0].plot(x_accuracy_iterations, y_val_accuracy, label="Val Accuracy")
     # plot vertical line on learning rate change
     for learning_rate_change_step in learning_rate_change_steps:
@@ -292,11 +294,11 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
-    i = 0
-    while Path(f"artifacts/logs/classify_cifar10_accuracy_{i}.png").exists():
-        i += 1
-    fig.savefig(f"artifacts/logs/classify_cifar10_accuracy_{i}.png")
-    with open(f"artifacts/logs/classify_cifar10_log_{i}.txt", "w") as file:
+    file_index = 0
+    while Path(f"artifacts/logs/classify_cifar10_{file_index}.png").exists():
+        file_index += 1
+    fig.savefig(f"artifacts/logs/classify_cifar10_{file_index}.png")
+    with open(f"artifacts/logs/classify_cifar10_log_{file_index}.txt", "w") as file:
         file.write(f"Config => {config}\n")
         file.write(f"Test Accuracy => {final_test_accuracy:0.4f}\n")
-        file.write(f"Stop Iteration => {i}\n")
+        file.write(f"Stop Iteration => {file_index}\n")

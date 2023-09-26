@@ -1,22 +1,26 @@
 import tensorflow as tf
 
 
-def augment_data(images: tf.Tensor, augmentations: int):
-    """Takes images with n number of channels (e.g. 3 for RGB),
-      and applies random augmentations to make it have augmentations*n number
-      of channels (e.g. 12 for RGB and 4 augmentations)
-      applies augmentation_per_type augmentations of each type
-      (e.g. rotation, translation, etc.)
-        
-
+def augment_data(images: tf.Tensor, num_augmentations: int):
+    """Takes the data and augments it,
+       by applying random flips, rotations, brightness, contrast, hue, and saturation
     Args:
-        images (tf.Tensor): should be a 4D tensor of shape
-            [batch_size, height, width, channels]
-
+        images (tf.Tensor): a tensor of images of shape
+        [batch_size, height, width, channels]
+        num_of_augmentations (int): the number of augmentations to apply to each image
     Returns:
-        tf.Tensor: A tensor of the shape
-        [batch_size, height, width, channels*augmentations]
+        tf.Tensor: a tensor of images and augmented images of shape
+        [batch_size * num_of_augmentations + batch_size, height, width, channels]
     """
-    # TODO: idk what i'm doing here
-    augmentations_per_type = augmentations // 4
-    # apply augmentations_per_type rotations of various degrees
+    for _ in range(num_augmentations):
+        tf.image.random_flip_left_right(images),
+        tf.image.random_flip_up_down(images),
+        tf.image.rot90(images, k=1),
+        tf.image.rot90(images, k=2),
+        tf.image.rot90(images, k=3),
+        tf.image.random_brightness(images, max_delta=0.1),
+        tf.image.random_contrast(images, lower=0.1, upper=0.2),
+        tf.image.random_hue(images, max_delta=0.1),
+        tf.image.random_saturation(images, lower=0.1, upper=0.2),
+
+    return images
