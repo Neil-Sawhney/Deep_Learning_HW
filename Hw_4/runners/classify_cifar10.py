@@ -215,21 +215,21 @@ def run(config_path: Path, use_last_checkpoint: bool):
             x_iterations = np.append(x_iterations, i)
 
             overall_description = (
-                f"\n\nMinimum Val Loss => {minimum_val_loss:0.4f}\t" +
-                f"Step {i}\t" +
-                f"Learning Rate => {adam.learning_rate:0.4f}\t")
+                f"Minimum Val Loss => {minimum_val_loss:0.4f}    " +
+                f"Step => {i}    " +
+                f"Learning Rate => {adam.learning_rate:0.4f}    ")
             overall_log.set_description_str(overall_description)
             overall_log.refresh()
 
             train_description = (
-                f"Train Batch Loss => {current_train_batch_loss:0.4f}\t" +
-                f"Train Accuracy => {current_batch_accuracy:0.4f}\t")
+                f"Train Batch Loss => {current_train_batch_loss:0.4f}    " +
+                f"Train Accuracy => {current_batch_accuracy:0.4f}    ")
             train_log.set_description_str(train_description)
             train_log.update(refresh_rate)
 
             val_description = (
-                f"Val Loss => {current_validation_loss:0.4f}\t" +
-                f"Val Accuracy => {current_validation_accuracy:0.4f}\t")
+                f"Val Loss => {current_validation_loss:0.4f}    " +
+                f"Val Accuracy => {current_validation_accuracy:0.4f}    ")
             val_log.set_description_str(val_description)
             val_log.update(refresh_rate)
 
