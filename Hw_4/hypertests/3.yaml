@@ -1,21 +1,22 @@
 cnn:
-  layer_depths: [30, 30, 30, 30, 30]
-  kernel_sizes: [[2,2], [2,2], [3,3], [3,3], [3,3]]
+  layer_depths: [100, 50]
+  kernel_sizes: [[3,3], [3,3]]
   pool_every_n_layers: 2
   pool_size: 2
   resblock_size: 2
   num_classes: 10
-  num_augmentations: 2
+  augmentation_prob: 0.2
+  group_norm_num_groups: 2
 mlp:
-  num_hidden_layers: 4
-  hidden_layer_width: 1024
+  num_hidden_layers: 2
+  hidden_layer_width: 100
 learning:
   weight_decay: 0.2
   dropout_first_n_fc_layers: 2
   dropout_prob: 0.5
-  batch_size: 5000
-  num_iters: 5000
-  learning_rates: [.001, .0005, .0002, .0001, .00005]
-  learning_patience: 200 
+  batch_size: 500
+  num_iters: 100000
+  learning_rates: [.001, .005, .01, .005, .001, .0005, 0.005, 0.005, 0.005, .0002, .0001, .0001]
+  learning_patience: 300 
 display:
   refresh_rate: 5
