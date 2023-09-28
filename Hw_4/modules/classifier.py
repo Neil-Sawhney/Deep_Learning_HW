@@ -1,25 +1,26 @@
 import tensorflow as tf
 from helpers.conv_2d import Conv2D
 from modules.mlp import MLP
-from modules.linear import Linear
+from helpers.group_norm import GroupNorm
 
 
 class Classifier(tf.Module):
     def __init__(
-            self,
-            input_depth: int,
-            layer_depths: list[int],
-            layer_kernel_sizes: list[tuple[int, int]],
-            num_classes: int,
-            input_size: int,
-            num_hidden_layers: int,
-            hidden_layer_width: int,
-            resblock_size: int = 2,
-            pool_every_n_layers: int = 0,
-            pool_size: int = 2,
-            dropout_first_n_layers: int = 0,
-            dropout_prob: float = 0.5,
-            ):
+        self,
+        input_depth: int,
+        layer_depths: list[int],
+        layer_kernel_sizes: list[tuple[int, int]],
+        num_classes: int,
+        input_size: int,
+        num_hidden_layers: int,
+        hidden_layer_width: int,
+        resblock_size: int = 2,
+        pool_every_n_layers: int = 0,
+        pool_size: int = 2,
+        dropout_first_n_layers: int = 0,
+        dropout_prob: float = 0.5,
+        group_norm_num_groups: int = 32,
+    ):
         """Initializes the Classifier class
 
         Args:
@@ -43,55 +44,56 @@ class Classifier(tf.Module):
             pool_size (int, optional): The size of the kernel for the max
                 pooling layer. Defaults to 2.
             dropout_prob (float, optional): The probability of dropping a node
+            group_norm_num_groups (int, optional): The number of groups to split the
+                channels into for group normalization. Defaults to 32.
         """
         self.layer_depths = layer_depths
         self.layer_kernel_sizes = layer_kernel_sizes
-        self.num_classes = num_classes
         self.input_size = input_size
-        self.num_hidden_layers = num_hidden_layers
-        self.hidden_layer_width = hidden_layer_width
         self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
         # TODO: Implement this
         self.resblock_size = resblock_size
+        # TODO: remove self from things that don't need it
 
         num_layers = len(self.layer_depths)
         output_depth = self.layer_depths[-1]
         if self.pool_every_n_layers > 0:
             num_pools = num_layers // self.pool_every_n_layers
             self.flatten_size = int(
-                (input_size // (self.pool_size ** (num_pools)))**2 *
-                output_depth)
+                (input_size // (self.pool_size ** (num_pools))) ** 2 * output_depth
+            )
         else:
             self.flatten_size = int(input_size**2 * output_depth)
 
         self.conv_layers = []
         self.shortcut_conv_layers = []
-        for (layer_depth,
-             layer_kernel_size) in zip(
-                 self.layer_depths,
-                 self.layer_kernel_sizes):
-            self.conv_layers.append(Conv2D(input_depth,
-                                           layer_depth,
-                                           layer_kernel_size))
-            self.shortcut_conv_layers.append(Conv2D(input_depth,
-                                             layer_depth,
-                                             [1, 1],
-                                             bias_enabled=False,))
+        self.group_norm_layers = []
+        for layer_depth, layer_kernel_size in zip(
+            self.layer_depths, self.layer_kernel_sizes
+        ):
+            self.conv_layers.append(Conv2D(input_depth, layer_depth, layer_kernel_size))
+            self.shortcut_conv_layers.append(
+                Conv2D(
+                    input_depth,
+                    layer_depth,
+                    [1, 1],
+                    bias_enabled=False,
+                )
+            )
+            self.group_norm_layers.append(GroupNorm(group_norm_num_groups, layer_depth))
             input_depth = layer_depth
 
-        self.mlp = MLP(self.flatten_size,
-                       self.num_classes,
-                       self.num_hidden_layers,
-                       self.hidden_layer_width,
-                       tf.nn.relu,
-                       dropout_first_n_layers=dropout_first_n_layers,
-                       dropout_prob=dropout_prob,
-                       zero_init=True,)
-
-        self.shortcut_linear = Linear(self.flatten_size,
-                                      self.num_classes,
-                                      zero_init=True,)
+        self.mlp = MLP(
+            self.flatten_size,
+            num_classes,
+            num_hidden_layers,
+            hidden_layer_width,
+            tf.nn.relu,
+            dropout_first_n_layers=dropout_first_n_layers,
+            dropout_prob=dropout_prob,
+            zero_init=True,
+        )
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
@@ -109,43 +111,38 @@ class Classifier(tf.Module):
                 [batch_size, num_classes]
         """
         moving_input_tensor = input_tensor
-        for (i,
-             (conv_layer, shortcut_layer)
-             ) in enumerate(zip(self.conv_layers, self.shortcut_conv_layers)):
+        for i, (conv_layer, shortcut_layer, group_norm_layer) in enumerate(
+            zip(self.conv_layers, self.shortcut_conv_layers, self.group_norm_layers)
+        ):
             shortcut = moving_input_tensor
 
-            output_tensor = tf.nn.relu(conv_layer(moving_input_tensor))
-            # TODO: remove batch, replace with group norm
-            output_tensor = tf.nn.batch_normalization(output_tensor,
-                                                      mean=0,
-                                                      variance=1,
-                                                      offset=None,
-                                                      scale=None,
-                                                      variance_epsilon=1e-5)
+            output_tensor = conv_layer(moving_input_tensor)
+            output_tensor = group_norm_layer(output_tensor)
+            output_tensor = tf.nn.relu(output_tensor)
             shortcut = shortcut_layer(shortcut)
 
             # If we are pooling every n layers and this is the nth layer
-            if (self.pool_every_n_layers != 0) and \
-               ((i + 1) % self.pool_every_n_layers) == 0:
-                output_tensor = tf.nn.max_pool2d(output_tensor, self.pool_size,
-                                                 strides=2, padding='VALID')
-                shortcut = tf.nn.max_pool2d(shortcut, self.pool_size,
-                                            strides=2, padding='VALID')
+            if (self.pool_every_n_layers != 0) and (
+                (i + 1) % self.pool_every_n_layers
+            ) == 0:
+                output_tensor = tf.nn.max_pool2d(
+                    output_tensor, self.pool_size, strides=2, padding="VALID"
+                )
+                shortcut = tf.nn.max_pool2d(
+                    shortcut, self.pool_size, strides=2, padding="VALID"
+                )
 
             output_tensor += shortcut
 
             moving_input_tensor = output_tensor
 
-        if self.flatten_size != (output_tensor.shape[1] *
-                                 output_tensor.shape[2] *
-                                 output_tensor.shape[3]):
-            raise ValueError(
-                "Flatten size does not match output tensor shape")
+        if self.flatten_size != (
+            output_tensor.shape[1] * output_tensor.shape[2] * output_tensor.shape[3]
+        ):
+            raise ValueError("Flatten size does not match output tensor shape")
 
-        shortcut_flattened = tf.reshape(shortcut, [-1, self.flatten_size])
         output_flattened = tf.reshape(output_tensor, [-1, self.flatten_size])
 
         output = self.mlp(output_flattened)
-        output += self.shortcut_linear(shortcut_flattened)
 
         return output

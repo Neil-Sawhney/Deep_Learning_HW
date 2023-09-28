@@ -6,9 +6,9 @@ import tensorflow as tf
 import tqdm
 import yaml
 
-from helpers.augment_data import augment_data
+from helpers.augment_data import AugmentData
 from helpers.load_pickle_data import load_pickle_data
-from helpers.optimizer import Adam
+from helpers.adam import Adam
 from modules.classifier import Classifier
 
 
@@ -82,7 +82,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
     resblock_size = config["cnn"]["resblock_size"]
     pool_size = config["cnn"]["pool_size"]
     num_classes = config["cnn"]["num_classes"]
-    num_augmentations = config["cnn"]["num_augmentations"]
+    augmentation_prob = config["cnn"]["augmentation_prob"]
+    group_norm_num_groups = config["cnn"]["group_norm_num_groups"]
     num_iters = config["learning"]["num_iters"]
     weight_decay = config["learning"]["weight_decay"]
     dropout_prob = config["learning"]["dropout_prob"]
@@ -127,6 +128,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
         pool_size,
         dropout_first_n_fc_layers,
         dropout_prob,
+        group_norm_num_groups,
     )
 
     minimum_val_loss = float("inf")
@@ -169,6 +171,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     )
     print(f"\nNumber of Parameters => {num_of_parameters}")
 
+    augment_data = AugmentData(augmentation_prob)
     for i in bar:
         batch_indices = rng.uniform(
             shape=[batch_size], maxval=num_samples, dtype=tf.int32
@@ -180,7 +183,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=tf.squeeze(train_labels_batch),
                     logits=classifier(
-                        augment_data(train_images_batch, num_augmentations)),
+                        augment_data(train_images_batch)),
                 )
             )
 
