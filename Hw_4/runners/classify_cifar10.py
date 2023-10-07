@@ -301,7 +301,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     while Path(f"artifacts/classify_cifar10_img_{file_index}.png").exists():
         file_index += 1
     fig.savefig(f"artifacts/classify_cifar10_img_{file_index}.png")
-    with open(f"artifacts/classify_cifar10_log_{file_index}.txt", "w") as file:
-        file.write(f"Config => {config}\n")
-        file.write(f"Test Accuracy => {final_test_accuracy:0.4f}\n")
-        file.write(f"Stop Iteration => {file_index}\n")
+
+    # Save the config file as a yaml under the same name as the image
+    config_path = Path(f"artifacts/classify_cifar10_img_{file_index}.yaml")
+    config_path.write_text(yaml.dump(config))

@@ -13,7 +13,7 @@ def main():
                         help="Path to the runner file")
     parser.add_argument("--config", "-c", type=Path,
                         nargs='?', help="Path to the config file")
-    parser.add_argument("--use_last_checkpoint", "-p", action="store_true",
+    parser.add_argument("--use_last_checkpoint", "-u", action="store_true",
                         help="Whether or not to use the last checkpoint")
 
     argcomplete.autocomplete(parser)
