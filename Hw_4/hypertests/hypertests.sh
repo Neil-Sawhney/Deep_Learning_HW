@@ -18,4 +18,9 @@ git add -A
 git commit -m "hypertests: 4"
 git push
 
-shutdown -h now
+./main.py ./runners/classify_cifar10.py -c ./hypertests/5.yaml
+git add -A
+git commit -m "hypertests: 5"
+git push
+
+sudo shutdown -h now

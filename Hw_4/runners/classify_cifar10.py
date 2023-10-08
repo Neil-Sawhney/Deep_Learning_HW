@@ -89,7 +89,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     learning_patience = config["learning"]["learning_patience"]
     learning_rates = config["learning"]["learning_rates"]
     refresh_rate = config["display"]["refresh_rate"]
-    num_hdden_layers = config["mlp"]["num_hidden_layers"]
+    num_hidden_layers = config["mlp"]["num_hidden_layers"]
     hidden_layer_width = config["mlp"]["hidden_layer_width"]
 
     layer_depths = [layer['depth'] for layer in layers]
@@ -126,7 +126,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
         pool_size,
         dropout_prob,
         group_norm_num_groups,
-        num_hdden_layers,
+        num_hidden_layers,
         hidden_layer_width,
     )
 

@@ -17,6 +17,9 @@ cnn:
   num_classes: 10
   augmentation_prob: 0.2
   num_augmentation_attempts: 3
+mlp:
+  num_hidden_layers: 1
+  hidden_layer_width: 1000
 learning:
   weight_decay: 0.2
   dropout_prob: 0.2
