@@ -7,3 +7,5 @@
     - Change parameters in the ``` configs ``` directory (or create your own).
 
 - View the results in ``` ./artifacts ```.
+
+# CIFAR 10/100 Writeup

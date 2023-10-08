@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 
-# TODO: no clue if this is right, and momentum is not implemented
 class Adam:
     def __init__(self,
                  learning_rate=1e-3,
