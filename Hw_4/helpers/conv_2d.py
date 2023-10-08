@@ -51,7 +51,7 @@ class Conv2D(tf.Module):
                 name="Conv2D/bias",
             )
 
-    def __call__(self, input_tensor: tf.Tensor):
+    def __call__(self, x: tf.Tensor):
         """Applies the convolution to the input
 
         Args:
@@ -63,7 +63,7 @@ class Conv2D(tf.Module):
                 Shape should be [batch_size, height, width, output_channels]
         """
         result = tf.nn.conv2d(
-            input_tensor, self.kernel, [1, self.stride, self.stride, 1], "SAME"
+            x, self.kernel, [1, self.stride, self.stride, 1], "SAME"
         )
         if self.bias_enabled:
             result = result + self.bias

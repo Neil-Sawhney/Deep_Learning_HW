@@ -50,14 +50,14 @@ class Classifier(tf.Module):
         self.pool_size = pool_size
         self.dropout_prob = dropout_prob
 
-        output_depth = self.layer_depths[-1]
+        output_depth = layer_depths[-1]
         self.flatten_size = int(
             (input_size // (self.pool_size ** (2))) ** 2 * output_depth
         )
 
         self.residual_blocks = []
         for layer_depth, layer_kernel_size, group_norm_num in zip(
-            self.layer_depths, self.layer_kernel_sizes, group_norm_num_groups
+            layer_depths, self.layer_kernel_sizes, group_norm_num_groups
         ):
             self.residual_blocks.append(
                 ResidualBlock(
@@ -70,27 +70,6 @@ class Classifier(tf.Module):
             )
             input_depth = layer_depth
 
-        # self.conv_layers = []
-        # self.shortcut_conv_layers = []
-        # self.group_norm_layers = []
-        # for layer_depth, layer_kernel_size, group_norm_num in zip(
-        #     self.layer_depths, self.layer_kernel_sizes, group_norm_num_groups
-        # ):
-        # # TODO: START OF RESBLOCK INIT
-        #     self.conv_layers.append(Conv2D(input_depth, layer_depth, layer_kernel_size))
-
-        #     self.shortcut_conv_layers.append(
-        #         Conv2D(
-        #             input_depth,
-        #             layer_depth,
-        #             [1, 1],
-        #         )
-        #     )
-        #     input_depth = layer_depth
-
-        #     self.group_norm_layers.append(GroupNorm(group_norm_num, layer_depth))
-        # # TODO: END OF RESBLOCK INIT
-
         self.fully_connected = MLP(
             self.flatten_size,
             num_classes,
@@ -102,13 +81,9 @@ class Classifier(tf.Module):
 
     def __call__(self, x: tf.Tensor):
         """Applies the classifier to the input,
-             runs it through a series of convolutional layers which consists of
-             a convolution, a relu, and a max pooling layer every n layers
-             then flattens the output and runs it through a linear layer,
-             then sends it through a softmax activation
 
         Args:
-            input_tensor (tf.Tensor): The Image to classify, should have shape
+            x (tf.Tensor): The Image to classify, should have shape
                 [batch_size, input_size, input_size, input_depth]
 
         Returns:

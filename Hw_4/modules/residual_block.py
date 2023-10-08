@@ -1,16 +1,18 @@
 import tensorflow as tf
+
 from helpers.conv_2d import Conv2D
 from helpers.group_norm import GroupNorm
 
 
 class ResidualBlock(tf.Module):
-    def __init__(self,
-                 input_depth,
-                 output_depth,
-                 kernel_size,
-                 group_norm_num_groups,
-                 resblock_size=2
-                 ):
+    def __init__(
+        self,
+        input_depth,
+        output_depth,
+        kernel_size,
+        group_norm_num_groups,
+        resblock_size=2,
+    ):
         """Initializes the ResidualBlock class
 
         Args:
@@ -22,14 +24,21 @@ class ResidualBlock(tf.Module):
             inbetween skip connections. Defaults to 2.
         """
         self.resblock_size = resblock_size
-        self.conv = Conv2D(input_depth, output_depth, kernel_size)
+
         self.shortcut_conv = Conv2D(input_depth, output_depth, [1, 1])
-        self.group_norm = GroupNorm(group_norm_num_groups, output_depth)
-        
-    def __call__(self, x: tf.tensor) -> tf.tensor:
-        shortcut = self.shortcut_conv(x)
+
+        self.conv_layers = []
         for _ in range(self.resblock_size):
-            x = self.conv(x)
+            self.conv_layers.append(
+                Conv2D(input_depth, output_depth, kernel_size)
+            )
+            input_depth = output_depth
+        self.group_norm = GroupNorm(group_norm_num_groups, output_depth)
+
+    def __call__(self, x: tf.Tensor) -> tf.Tensor:
+        shortcut = self.shortcut_conv(x)
+        for conv_layer in self.conv_layers:
+            x = conv_layer(x)
             x = self.group_norm(x)
             x = tf.nn.relu(x)
         return x + shortcut
