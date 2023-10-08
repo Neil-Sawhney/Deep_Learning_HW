@@ -1,7 +1,9 @@
 import tensorflow as tf
+
 from helpers.conv_2d import Conv2D
-from modules.mlp import MLP
 from helpers.group_norm import GroupNorm
+
+from modules.linear import Linear
 
 
 class Classifier(tf.Module):
@@ -12,12 +14,8 @@ class Classifier(tf.Module):
         layer_kernel_sizes: list[tuple[int, int]],
         num_classes: int,
         input_size: int,
-        num_hidden_layers: int,
-        hidden_layer_width: int,
         resblock_size: int = 2,
-        pool_every_n_layers: int = 0,
         pool_size: int = 2,
-        dropout_first_n_layers: int = 0,
         dropout_prob: float = 0.5,
         group_norm_num_groups: int = 32,
     ):
@@ -50,48 +48,37 @@ class Classifier(tf.Module):
         self.layer_depths = layer_depths
         self.layer_kernel_sizes = layer_kernel_sizes
         self.input_size = input_size
-        self.pool_every_n_layers = pool_every_n_layers
         self.pool_size = pool_size
-        # TODO: Implement this
         self.resblock_size = resblock_size
-        # TODO: remove self from things that don't need it
 
-        num_layers = len(self.layer_depths)
         output_depth = self.layer_depths[-1]
-        if self.pool_every_n_layers > 0:
-            num_pools = num_layers // self.pool_every_n_layers
-            self.flatten_size = int(
-                (input_size // (self.pool_size ** (num_pools))) ** 2 * output_depth
-            )
-        else:
-            self.flatten_size = int(input_size**2 * output_depth)
+        self.flatten_size = int(
+            (input_size // (self.pool_size ** (2))) ** 2 * output_depth * 4
+        )
 
         self.conv_layers = []
         self.shortcut_conv_layers = []
         self.group_norm_layers = []
-        for layer_depth, layer_kernel_size in zip(
-            self.layer_depths, self.layer_kernel_sizes
+        for layer_depth, layer_kernel_size, group_norm_num_group in zip(
+            self.layer_depths, self.layer_kernel_sizes, group_norm_num_groups
         ):
             self.conv_layers.append(Conv2D(input_depth, layer_depth, layer_kernel_size))
+
             self.shortcut_conv_layers.append(
                 Conv2D(
                     input_depth,
                     layer_depth,
                     [1, 1],
-                    bias_enabled=False,
+                    identity=True,
                 )
             )
-            self.group_norm_layers.append(GroupNorm(group_norm_num_groups, layer_depth))
+
+            self.group_norm_layers.append(GroupNorm(group_norm_num_group, layer_depth))
             input_depth = layer_depth
 
-        self.mlp = MLP(
+        self.fully_connected = Linear(
             self.flatten_size,
             num_classes,
-            num_hidden_layers,
-            hidden_layer_width,
-            tf.nn.relu,
-            dropout_first_n_layers=dropout_first_n_layers,
-            dropout_prob=dropout_prob,
             zero_init=True,
         )
 
@@ -111,30 +98,29 @@ class Classifier(tf.Module):
                 [batch_size, num_classes]
         """
         moving_input_tensor = input_tensor
-        for i, (conv_layer, shortcut_layer, group_norm_layer) in enumerate(
-            zip(self.conv_layers, self.shortcut_conv_layers, self.group_norm_layers)
+
+        moving_input_tensor = tf.nn.max_pool2d(
+            moving_input_tensor, self.pool_size, strides=2, padding="VALID"
+        )
+
+        # TODO: START OF RESBLOCK CALL
+        for conv_layer, shortcut_layer, group_norm_layer in zip(
+            self.conv_layers, self.shortcut_conv_layers, self.group_norm_layers
         ):
-            shortcut = moving_input_tensor
+            shortcut = shortcut_layer(moving_input_tensor)
 
-            output_tensor = conv_layer(moving_input_tensor)
-            output_tensor = group_norm_layer(output_tensor)
-            output_tensor = tf.nn.relu(output_tensor)
-            shortcut = shortcut_layer(shortcut)
+            for _ in range(self.resblock_size):
+                output_tensor = conv_layer(moving_input_tensor)
 
-            # If we are pooling every n layers and this is the nth layer
-            if (self.pool_every_n_layers != 0) and (
-                (i + 1) % self.pool_every_n_layers
-            ) == 0:
-                output_tensor = tf.nn.max_pool2d(
-                    output_tensor, self.pool_size, strides=2, padding="VALID"
-                )
-                shortcut = tf.nn.max_pool2d(
-                    shortcut, self.pool_size, strides=2, padding="VALID"
-                )
+                output_tensor = group_norm_layer(output_tensor)
+                output_tensor = tf.nn.relu(output_tensor)
 
-            output_tensor += shortcut
+            moving_input_tensor = output_tensor + shortcut
+        # TODO: END OF RESBLOCK CALL
 
-            moving_input_tensor = output_tensor
+        moving_input_tensor = tf.nn.avg_pool2d(
+            moving_input_tensor, self.pool_size, strides=2, padding="VALID"
+        )
 
         if self.flatten_size != (
             output_tensor.shape[1] * output_tensor.shape[2] * output_tensor.shape[3]
@@ -143,6 +129,5 @@ class Classifier(tf.Module):
 
         output_flattened = tf.reshape(output_tensor, [-1, self.flatten_size])
 
-        output = self.mlp(output_flattened)
-
-        return output
+        output_tensor = self.fully_connected(output_flattened)
+        return output_tensor

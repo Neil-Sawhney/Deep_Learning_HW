@@ -6,9 +6,9 @@ import tensorflow as tf
 import tqdm
 import yaml
 
+from helpers.adam import Adam
 from helpers.augment_data import AugmentData
 from helpers.load_pickle_data import load_pickle_data
-from helpers.adam import Adam
 from modules.classifier import Classifier
 
 
@@ -76,24 +76,23 @@ def run(config_path: Path, use_last_checkpoint: bool):
         config_path = Path("configs/classify_cifar10_config.yaml")
 
     config = yaml.safe_load(config_path.read_text())
-    layer_depths = config["cnn"]["layer_depths"]
-    kernel_sizes = config["cnn"]["kernel_sizes"]
-    pool_every_n_layers = config["cnn"]["pool_every_n_layers"]
     resblock_size = config["cnn"]["resblock_size"]
     pool_size = config["cnn"]["pool_size"]
     num_classes = config["cnn"]["num_classes"]
     augmentation_prob = config["cnn"]["augmentation_prob"]
-    group_norm_num_groups = config["cnn"]["group_norm_num_groups"]
+    num_augmentation_attempts = config["cnn"]["num_augmentation_attempts"]
+    layers = config["cnn"]["layers"]
     num_iters = config["learning"]["num_iters"]
     weight_decay = config["learning"]["weight_decay"]
     dropout_prob = config["learning"]["dropout_prob"]
     batch_size = config["learning"]["batch_size"]
     learning_patience = config["learning"]["learning_patience"]
-    dropout_first_n_fc_layers = config["learning"]["dropout_first_n_fc_layers"]
     learning_rates = config["learning"]["learning_rates"]
     refresh_rate = config["display"]["refresh_rate"]
-    num_hidden_layers = config["mlp"]["num_hidden_layers"]
-    hidden_layer_width = config["mlp"]["hidden_layer_width"]
+
+    layer_depths = [layer['depth'] for layer in layers]
+    kernel_sizes = [layer['kernel_size'] for layer in layers]
+    group_norm_num_groups = [layer['group_norm_num_groups'] for layer in layers]
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
@@ -121,12 +120,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
         kernel_sizes,
         num_classes,
         train_images.shape[1],
-        num_hidden_layers,
-        hidden_layer_width,
         resblock_size,
-        pool_every_n_layers,
         pool_size,
-        dropout_first_n_fc_layers,
         dropout_prob,
         group_norm_num_groups,
     )
@@ -171,7 +166,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     )
     print(f"\nNumber of Parameters => {num_of_parameters}")
 
-    augment_data = AugmentData(augmentation_prob)
+    augment_data = AugmentData(augmentation_prob, num_augmentation_attempts)
     for i in bar:
         batch_indices = rng.uniform(
             shape=[batch_size], maxval=num_samples, dtype=tf.int32
@@ -182,8 +177,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             current_train_batch_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=tf.squeeze(train_labels_batch),
-                    logits=classifier(
-                        augment_data(train_images_batch)),
+                    logits=classifier(augment_data(train_images_batch)),
                 )
             )
 
