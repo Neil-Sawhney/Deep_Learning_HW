@@ -1,17 +1,17 @@
 cnn:
   layers:
-    - depth: 64
+    - depth: 8
+      kernel_size: [3, 3]
+      group_norm_num_groups: 4
+    - depth: 16
       kernel_size: [3, 3]
       group_norm_num_groups: 8
-    - depth: 128
+    - depth: 32
       kernel_size: [3, 3]
       group_norm_num_groups: 16
-    - depth: 256
+    - depth: 64
       kernel_size: [3, 3]
       group_norm_num_groups: 32
-    # - depth: 512
-    #   kernel_size: [3, 3]
-    #   group_norm_num_groups: 64
   pool_size: 2
   resblock_size: 2
   num_classes: 10
@@ -22,7 +22,7 @@ learning:
   dropout_prob: 0
   batch_size: 500
   num_iters: 100000
-  learning_rates: [.001, .0005, .0001, .0005, .001, .0005, .0002, .0001, .0001]
-  learning_patience: 5
+  learning_rates: [.0005, .0001, .0005, .0002, .0001, .0001, .0001]
+  learning_patience: 200
 display:
-  refresh_rate: 200
+  refresh_rate: 1

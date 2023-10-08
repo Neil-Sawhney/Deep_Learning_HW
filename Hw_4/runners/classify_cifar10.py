@@ -126,7 +126,6 @@ def run(config_path: Path, use_last_checkpoint: bool):
         group_norm_num_groups,
     )
 
-    minimum_val_loss = float("inf")
     minimum_val_step_num = 0
     current_validation_loss = 0
 
@@ -185,6 +184,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
         if i == 0:
             print("\n\n\n\n")
             print(f"Initial Training Loss => {current_train_batch_loss:0.4f}")
+            minimum_val_loss = current_train_batch_loss
 
         grads = tape.gradient(current_train_batch_loss, classifier.trainable_variables)
 
