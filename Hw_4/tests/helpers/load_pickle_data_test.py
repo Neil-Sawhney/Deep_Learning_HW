@@ -10,15 +10,15 @@ def test_dimensionality():
         "data/cifar-10-batches-py/data_batch_1"
     )
 
-    assert tf.shape(train_and_val_labels) == [10000]
-    assert tf.shape(train_and_val_images) == [10000, 32, 32, 3]
+    assert tf.shape(train_and_val_labels)[0] == 10000
+    assert train_and_val_images.shape == tf.TensorShape([10000, 32, 32, 3])
 
     train_and_val_labels, train_and_val_images = load_pickle_data(
-        "data/cifar-100-python/train"
+        "data/cifar-100-python/train", "fine_labels"
     )
 
-    assert tf.shape(train_and_val_labels) == [50000]
-    assert tf.shape(train_and_val_images) == [50000, 32, 32, 3]
+    assert tf.shape(train_and_val_labels)[0] == [50000]
+    assert train_and_val_images.shape == tf.TensorShape([50000, 32, 32, 3])
 
 
 def test_labels():
@@ -26,7 +26,7 @@ def test_labels():
 
     from helpers.load_pickle_data import load_pickle_data
 
-    train_and_val_labels, train_and_val_images = load_pickle_data(
+    train_and_val_labels, _ = load_pickle_data(
         "data/cifar-10-batches-py/data_batch_1"
     )
 

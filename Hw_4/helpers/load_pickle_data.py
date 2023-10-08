@@ -3,7 +3,7 @@ from pathlib import Path
 import tensorflow as tf
 
 
-def load_pickle_data(filename: Path):
+def load_pickle_data(filename: Path, label_id: str = "labels", data_id: str = "data"):
     """Load data from a pickle file. Convert into a tensorflow dataset.
     Return the labels and images as a tuple.
 
@@ -15,8 +15,9 @@ def load_pickle_data(filename: Path):
     """
     with open(filename, 'rb') as fo:
         data = pickle.load(fo, encoding='bytes')
-    labels = tf.cast(data[b'labels'], tf.int32)
-    data = tf.cast(data[b'data'], tf.float32)
+
+    label_id = tf.cast(data[label_id.encode('utf-8')], tf.int32)
+    data = tf.cast(data[data_id.encode('utf-8')], tf.float32)
 
     # data -- a 10000x3072 numpy array of uint8s. Each row of the array stores
     # a 32x32 colour image. The first 1024 entries contain the red channel
@@ -30,4 +31,4 @@ def load_pickle_data(filename: Path):
     data = tf.transpose(data, [0, 2, 3, 1])
 
     data = tf.cast(data, tf.float32)/255.0
-    return labels, data
+    return label_id, data

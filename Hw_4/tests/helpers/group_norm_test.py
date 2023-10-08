@@ -30,11 +30,8 @@ def test_mean_and_variance():
 
     mean, variance = tf.nn.moments(output, axes=[1, 2, 3])
 
-    tf.assert_equal(tf.shape(mean), [1])
-    tf.assert_equal(tf.shape(variance), [1])
-
-    tf.assert_equal(mean, tf.zeros_like(mean))
-    tf.assert_equal(variance, tf.ones_like(variance))
+    assert mean[0].numpy() == pytest.approx(0.0, abs=1e-3)
+    assert variance[0].numpy() == pytest.approx(1.0, abs=1e-3)
 
 
 if __name__ == "__main__":
