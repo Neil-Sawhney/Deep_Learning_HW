@@ -2,13 +2,14 @@ import tensorflow as tf
 
 
 class AugmentData:
-    def __init__(self, augmentation_prob: int):
+    def __init__(self, augmentation_multiplier: int):
         """Initializes the AugmentData class
 
         Args:
-            augmentation_prob (int): the probability of augmenting the data, from 0 to 1
+            augmentation_multiplier (int): the percentage of the data to augment,
+            must be between 0 and 1
         """
-        self.augmentation_prob = augmentation_prob
+        self.augmentation_multiplier = augmentation_multiplier
 
     def __call__(
         self, labels: tf.Tensor, images: tf.Tensor
@@ -23,48 +24,60 @@ class AugmentData:
         Returns:
             tuple[tf.Tensor, tf.Tensor]: a tuple of the augmented images and labels,
             the images have shape [batch_size +
-            augmentation_prob*batch_size*6, height, width, 3] and the labels have
-            shape [batch_size + augmentation_prob*batch_size*6]
+            augmentation_multiplier*batch_size*6, height, width, 3] and the labels have
+            shape [batch_size + augmentation_multiplier*batch_size*6]
         """
 
         zoom_indices = tf.random.uniform(
             shape=[
-                tf.cast(tf.shape(images)[0].numpy() * self.augmentation_prob, tf.int32)
+                tf.cast(
+                    tf.shape(images)[0].numpy() * self.augmentation_multiplier, tf.int32
+                )
             ],
             maxval=tf.shape(images)[0],
             dtype=tf.int32,
         )
         flipped_indices = tf.random.uniform(
             shape=[
-                tf.cast(tf.shape(images)[0].numpy() * self.augmentation_prob, tf.int32)
+                tf.cast(
+                    tf.shape(images)[0].numpy() * self.augmentation_multiplier, tf.int32
+                )
             ],
             maxval=tf.shape(images)[0],
             dtype=tf.int32,
         )
         brightness_indices = tf.random.uniform(
             shape=[
-                tf.cast(tf.shape(images)[0].numpy() * self.augmentation_prob, tf.int32)
+                tf.cast(
+                    tf.shape(images)[0].numpy() * self.augmentation_multiplier, tf.int32
+                )
             ],
             maxval=tf.shape(images)[0],
             dtype=tf.int32,
         )
         contrast_indices = tf.random.uniform(
             shape=[
-                tf.cast(tf.shape(images)[0].numpy() * self.augmentation_prob, tf.int32)
+                tf.cast(
+                    tf.shape(images)[0].numpy() * self.augmentation_multiplier, tf.int32
+                )
             ],
             maxval=tf.shape(images)[0],
             dtype=tf.int32,
         )
         hue_indices = tf.random.uniform(
             shape=[
-                tf.cast(tf.shape(images)[0].numpy() * self.augmentation_prob, tf.int32)
+                tf.cast(
+                    tf.shape(images)[0].numpy() * self.augmentation_multiplier, tf.int32
+                )
             ],
             maxval=tf.shape(images)[0],
             dtype=tf.int32,
         )
         saturation_indices = tf.random.uniform(
             shape=[
-                tf.cast(tf.shape(images)[0].numpy() * self.augmentation_prob, tf.int32)
+                tf.cast(
+                    tf.shape(images)[0].numpy() * self.augmentation_multiplier, tf.int32
+                )
             ],
             maxval=tf.shape(images)[0],
             dtype=tf.int32,

@@ -86,7 +86,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     config = yaml.safe_load(config_path.read_text())
     resblock_size = config["cnn"]["resblock_size"]
     pool_size = config["cnn"]["pool_size"]
-    augmentation_prob = config["cnn"]["augmentation_prob"]
+    augmentation_multiplier = config["cnn"]["augmentation_multiplier"]
     layers = config["cnn"]["layers"]
     num_iters = config["learning"]["num_iters"]
     weight_decay = config["learning"]["weight_decay"]
@@ -176,7 +176,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     )
     print(f"\nNumber of Parameters => {num_of_parameters}")
 
-    augment_data = AugmentData(augmentation_prob)
+    augment_data = AugmentData(augmentation_multiplier)
     train_labels, train_images = augment_data(train_labels, train_images)
     for i in bar:
         batch_indices = rng.uniform(

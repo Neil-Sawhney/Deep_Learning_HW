@@ -14,4 +14,4 @@
 - My Augmentation used to get applied on the batch, aka on the go using a for loop. That was really slow, so i instead compromised space for time and applied it on the whole dataset at once.
 - My architecture was very random before but now i'm doing a close copy of resnet-50, although i had to nuke it quite a bit because my computer couldn't handle it.
 - My desired spec for cifar10 is 93% accuracy, and for cifar100 is 70% accuracy from reading papers with similar architectures. However, i did not reach those specs.
-- Plots for some (no where near all) of my attempts can be found in the ``` ./artifacts ``` directory. Accompyning them in the same folder are the configs used to generate them. The title of the plots include my test accuracy, and top 5 test accuracy.
+- Plots for some (no where near all) of my attempts can be found in the ``` ./artifacts ``` directory. Accompanying them in the same folder are the configs used to generate them. The title of the plots include my test accuracy, and top 5 test accuracy.
