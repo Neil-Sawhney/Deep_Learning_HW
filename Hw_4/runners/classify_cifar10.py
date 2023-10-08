@@ -11,6 +11,8 @@ from helpers.augment_data import AugmentData
 from helpers.load_pickle_data import load_pickle_data
 from modules.classifier import Classifier
 
+from sklearn.metrics import top_k_accuracy_score
+
 
 def train_batch_accuracy(classifier, train_images_batch, train_labels_batch):
     return tf.reduce_mean(
@@ -46,6 +48,12 @@ def test_accuracy(classifier, test_images, test_labels):
             tf.float32,
         )
     ).numpy()
+
+
+def top_5_test_accuracy(classifier, test_images, test_labels):
+    return top_k_accuracy_score(
+        test_labels.numpy().reshape(-1), classifier(test_images).numpy(), k=5
+    )
 
 
 def val_loss(
@@ -290,8 +298,17 @@ def run(config_path: Path, use_last_checkpoint: bool):
     print(f"Stop Iteration => {i}")
 
     final_test_accuracy = test_accuracy(classifier, test_images, test_labels)
+    final_top_5_test_accuracy = top_5_test_accuracy(
+        classifier, test_images, test_labels
+    )
     print(f"Test Accuracy => {final_test_accuracy:0.4f}")
-    fig.suptitle("Classify Cifar10: Test Accuracy = " + str(final_test_accuracy))
+    print(f"Top 5 Test Accuracy => {final_top_5_test_accuracy:0.4f}")
+    fig.suptitle(
+        "Classify Cifar10: Test Accuracy = "
+        + str(final_test_accuracy)
+        + "\nTop 5 Test Accuracy = "
+        + str(final_top_5_test_accuracy)
+    )
 
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting

@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 import tqdm
 import yaml
+from sklearn.metrics import top_k_accuracy_score
 
 from helpers.adam import Adam
 from helpers.augment_data import AugmentData
@@ -46,6 +47,12 @@ def test_accuracy(classifier, test_images, test_labels):
             tf.float32,
         )
     ).numpy()
+
+
+def top_5_test_accuracy(classifier, test_images, test_labels):
+    return top_k_accuracy_score(
+        test_labels.numpy().reshape(-1), classifier(test_images).numpy(), k=5
+    )
 
 
 def val_loss(
@@ -98,7 +105,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
     train_and_val_labels, train_and_val_images = load_pickle_data(
-        "data/cifar-100-python/train"
+        "data/cifar-100-python/train", "fine_labels"
     )
 
     num_classes = 100
@@ -286,8 +293,17 @@ def run(config_path: Path, use_last_checkpoint: bool):
     print(f"Stop Iteration => {i}")
 
     final_test_accuracy = test_accuracy(classifier, test_images, test_labels)
+    final_top_5_test_accuracy = top_5_test_accuracy(
+        classifier, test_images, test_labels
+    )
     print(f"Test Accuracy => {final_test_accuracy:0.4f}")
-    fig.suptitle("Classify Cifar10: Test Accuracy = " + str(final_test_accuracy))
+    print(f"Top 5 Test Accuracy => {final_top_5_test_accuracy:0.4f}")
+    fig.suptitle(
+        "Classify Cifar100: Test Accuracy = "
+        + str(final_test_accuracy)
+        + "\nTop 5 Test Accuracy = "
+        + str(final_top_5_test_accuracy)
+    )
 
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
