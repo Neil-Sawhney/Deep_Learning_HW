@@ -12,7 +12,7 @@ class MLP(tf.Module):
         hidden_layer_width,
         hidden_activation=tf.identity,
         output_activation=tf.identity,
-        dropout_prob=0.5,
+        dropout_prob=0,
         zero_init=False,
     ):
         self.num_inputs = num_inputs

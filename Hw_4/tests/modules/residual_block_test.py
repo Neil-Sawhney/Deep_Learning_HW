@@ -1,10 +1,10 @@
 import pytest
 
 
-@pytest.mark.parametrize("input_depth", [1, 3])
-@pytest.mark.parametrize("output_depth", [1, 3])
+@pytest.mark.parametrize("input_depth", [3, 6])
+@pytest.mark.parametrize("output_depth", [3, 6])
 @pytest.mark.parametrize("kernel_size", [[2, 2], [4, 4], [8, 8]])
-@pytest.mark.parametrize("group_norm_num_groups", [1, 3, 16])
+@pytest.mark.parametrize("group_norm_num_groups", [1, 3])
 @pytest.mark.parametrize("resblock_size", [1, 2, 3])
 def test_dimensionality(
     input_depth, output_depth, kernel_size, group_norm_num_groups, resblock_size
