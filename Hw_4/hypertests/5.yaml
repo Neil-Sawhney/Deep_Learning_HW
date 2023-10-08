@@ -14,9 +14,7 @@ cnn:
       group_norm_num_groups: 64
   pool_size: 2
   resblock_size: 2
-  num_classes: 10
   augmentation_prob: 0.2
-  num_augmentation_attempts: 3
 mlp:
   num_hidden_layers: 1
   hidden_layer_width: 1000
