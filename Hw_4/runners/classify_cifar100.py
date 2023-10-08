@@ -80,7 +80,7 @@ def val_loss(
 
 def run(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
-        config_path = Path("configs/classify_cifar10_config.yaml")
+        config_path = Path("configs/classify_cifar_config.yaml")
 
     config = yaml.safe_load(config_path.read_text())
     resblock_size = config["cnn"]["resblock_size"]
@@ -114,7 +114,9 @@ def run(config_path: Path, use_last_checkpoint: bool):
     val_labels = train_and_val_labels[-10000:]
     val_images = train_and_val_images[-10000:]
 
-    test_labels, test_images = load_pickle_data("data/cifar-100-python/test")
+    test_labels, test_images = load_pickle_data(
+        "data/cifar-100-python/test", "fine_labels"
+    )
 
     num_samples = train_images.shape[0]
     input_depth = train_images.shape[-1]

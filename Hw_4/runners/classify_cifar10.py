@@ -81,7 +81,7 @@ def val_loss(
 
 def run(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
-        config_path = Path("configs/classify_cifar10_config.yaml")
+        config_path = Path("configs/classify_cifar_config.yaml")
 
     config = yaml.safe_load(config_path.read_text())
     resblock_size = config["cnn"]["resblock_size"]
