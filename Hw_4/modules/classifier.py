@@ -3,7 +3,7 @@ import tensorflow as tf
 from helpers.conv_2d import Conv2D
 from helpers.group_norm import GroupNorm
 
-from modules.linear import Linear
+from modules.mlp import MLP
 
 
 class Classifier(tf.Module):
@@ -18,6 +18,8 @@ class Classifier(tf.Module):
         pool_size: int = 2,
         dropout_prob: float = 0.5,
         group_norm_num_groups: int = 32,
+        num_hidden_layers: int = 1,
+        hidden_layer_width: int = 128,
     ):
         """Initializes the Classifier class
 
@@ -50,10 +52,11 @@ class Classifier(tf.Module):
         self.input_size = input_size
         self.pool_size = pool_size
         self.resblock_size = resblock_size
+        self.dropout_prob = dropout_prob
 
         output_depth = self.layer_depths[-1]
         self.flatten_size = int(
-            (input_size // (self.pool_size ** (2))) ** 2 * output_depth * 4
+            (input_size // (self.pool_size ** (2))) ** 2 * output_depth
         )
 
         self.conv_layers = []
@@ -69,18 +72,20 @@ class Classifier(tf.Module):
                     input_depth,
                     layer_depth,
                     [1, 1],
-                    identity=True,
                 )
             )
 
             self.group_norm_layers.append(GroupNorm(group_norm_num_group, layer_depth))
             input_depth = layer_depth
 
-        self.fully_connected = Linear(
-            self.flatten_size,
-            num_classes,
-            zero_init=True,
-        )
+            self.fully_connected = MLP(
+                self.flatten_size,
+                num_classes,
+                num_hidden_layers,
+                hidden_layer_width,
+                hidden_activation=tf.nn.relu,
+                zero_init=True,
+            )
 
     def __call__(self, input_tensor: tf.Tensor):
         """Applies the classifier to the input,
@@ -118,9 +123,11 @@ class Classifier(tf.Module):
             moving_input_tensor = output_tensor + shortcut
         # TODO: END OF RESBLOCK CALL
 
-        moving_input_tensor = tf.nn.avg_pool2d(
+        output_tensor = tf.nn.avg_pool2d(
             moving_input_tensor, self.pool_size, strides=2, padding="VALID"
         )
+
+        output_tensor = tf.nn.dropout(output_tensor, rate=self.dropout_prob)
 
         if self.flatten_size != (
             output_tensor.shape[1] * output_tensor.shape[2] * output_tensor.shape[3]

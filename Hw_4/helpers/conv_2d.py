@@ -9,7 +9,6 @@ class Conv2D(tf.Module):
         kernel_shape: tuple[int, int],
         stride: int = 1,
         bias_enabled: bool = False,
-        identity: bool = False,
     ):
         """Initializes the Conv2D class
 
@@ -31,35 +30,19 @@ class Conv2D(tf.Module):
         # He initialization
         stddev = tf.sqrt(2 / (input_channels * kernel_shape[0] * kernel_shape[1]))
 
-        if identity:
-            self.kernel = tf.Variable(
-                tf.constant(
-                    1.0,
-                    shape=[
-                        kernel_shape[0],
-                        kernel_shape[1],
-                        input_channels,
-                        output_channels,
-                    ],
-                ),
-                trainable=False,
-                name="Conv2D/kernel",
-            )
-
-        else:
-            self.kernel = tf.Variable(
-                rng.normal(
-                    shape=[
-                        kernel_shape[0],
-                        kernel_shape[1],
-                        input_channels,
-                        output_channels,
-                    ],
-                    stddev=stddev,
-                ),
-                trainable=True,
-                name="Conv2D/kernel",
-            )
+        self.kernel = tf.Variable(
+            rng.normal(
+                shape=[
+                    kernel_shape[0],
+                    kernel_shape[1],
+                    input_channels,
+                    output_channels,
+                ],
+                stddev=stddev,
+            ),
+            trainable=True,
+            name="Conv2D/kernel",
+        )
 
         if self.bias_enabled:
             self.bias = tf.Variable(

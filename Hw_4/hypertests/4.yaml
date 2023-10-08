@@ -1,8 +1,5 @@
 cnn:
   layers:
-    - depth: 8
-      kernel_size: [3, 3]
-      group_norm_num_groups: 4
     - depth: 16
       kernel_size: [3, 3]
       group_norm_num_groups: 8
@@ -12,10 +9,13 @@ cnn:
     - depth: 64
       kernel_size: [3, 3]
       group_norm_num_groups: 32
+    - depth: 128
+      kernel_size: [3, 3]
+      group_norm_num_groups: 64
   pool_size: 2
   resblock_size: 2
   num_classes: 10
-  augmentation_prob: 0.5
+  augmentation_prob: 0.2
   num_augmentation_attempts: 3
 learning:
   weight_decay: 0.2

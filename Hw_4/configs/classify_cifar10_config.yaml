@@ -12,14 +12,20 @@ cnn:
     - depth: 64
       kernel_size: [3, 3]
       group_norm_num_groups: 32
+    - depth: 128
+      kernel_size: [3, 3]
+      group_norm_num_groups: 64
   pool_size: 2
   resblock_size: 2
   num_classes: 10
   augmentation_prob: 0.2
   num_augmentation_attempts: 3
+mlp:
+  num_hidden_layers: 1
+  hidden_layer_width: 1000
 learning:
-  weight_decay: 0.5
-  dropout_prob: 0
+  weight_decay: 0.2
+  dropout_prob: 0.2
   batch_size: 500
   num_iters: 100000
   learning_rates: [.0005, .0001, .0005, .0002, .0001, .0001, .0001]
