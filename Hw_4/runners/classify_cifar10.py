@@ -27,15 +27,20 @@ def train_batch_accuracy(classifier, train_images_batch, train_labels_batch):
 
 
 def val_accuracy(classifier, val_images, val_labels):
-    return tf.reduce_mean(
-        tf.cast(
-            tf.equal(
-                classifier(val_images).numpy().argmax(axis=1),
-                val_labels.numpy().reshape(-1),
-            ),
-            tf.float32,
+    val_accuracy = 0
+    for i in range(0, val_images.shape[0], val_images.shape[0] // 100):
+        batch_indices = tf.range(i, i + val_images.shape[0] // 100)
+        val_batch_images = tf.gather(val_images, batch_indices)
+        val_batch_labels = tf.gather(val_labels, batch_indices)
+        val_accuracy += tf.reduce_mean(
+            tf.cast(
+                tf.equal(
+                    classifier(val_batch_images).numpy().argmax(axis=1),
+                    val_batch_labels.numpy().reshape(-1),
+                ),
+                tf.float32,
+            )
         )
-    )
 
 
 def test_accuracy(classifier, test_images, test_labels):
@@ -65,11 +70,23 @@ def val_loss(
     minimum_val_step,
     current_step,
 ):
-    validation_loss = tf.reduce_mean(
-        tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels=tf.squeeze(val_labels), logits=classifier(val_images)
+    validation_loss = 0
+
+    for i in range(0, val_images.shape[0], val_images.shape[0] // 100):
+        batch_indices = tf.range(i, i + val_images.shape[0] // 100)
+        val_batch_images = tf.gather(val_images, batch_indices)
+        val_batch_labels = tf.gather(val_labels, batch_indices)
+        validation_loss = tf.reduce_mean(
+            tf.nn.sparse_softmax_cross_entropy_with_logits(
+                labels=tf.squeeze(val_batch_labels), logits=classifier(val_batch_images)
+            )
         )
-    )
+
+        # average the validation loss over the batches
+        if i == 0:
+            validation_loss = validation_loss / (val_images.shape[0])
+        else:
+            validation_loss += validation_loss / (val_images.shape[0])
 
     if validation_loss < minimum_val_loss:
         minimum_val_loss = validation_loss
@@ -116,8 +133,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
     num_classes = 10
     train_labels = train_and_val_labels[:-10000]
     train_images = train_and_val_images[:-10000]
-    val_labels = train_and_val_labels[-100:]
-    val_images = train_and_val_images[-100:]
+    val_labels = train_and_val_labels[-10000:]
+    val_images = train_and_val_images[-10000:]
 
     test_labels, test_images = load_pickle_data("data/cifar-10-batches-py/test_batch")
 

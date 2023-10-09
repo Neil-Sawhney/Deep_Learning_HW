@@ -31,7 +31,7 @@ cnn:
 display:
   refresh_rate: 5
 learning:
-  batch_size: 100
+  batch_size: 200
   dropout_prob: 0.2
   learning_patience: 4000
   learning_rates:
