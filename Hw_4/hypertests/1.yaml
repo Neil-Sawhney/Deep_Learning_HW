@@ -51,4 +51,4 @@ learning:
   weight_decay: 0.005
 mlp:
   hidden_layer_width: 16
-  num_hidden_layers: 1
+  num_hidden_layers: 0

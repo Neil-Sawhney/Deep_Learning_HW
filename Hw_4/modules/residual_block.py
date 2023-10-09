@@ -39,6 +39,9 @@ class ResidualBlock(tf.Module):
         shortcut = self.shortcut_conv(x)
         for conv_layer in self.conv_layers:
             x = conv_layer(x)
+            x = conv_layer(x)
+            x = conv_layer(x)
+            x = conv_layer(x)
             x = self.group_norm(x)
             x = tf.nn.relu(x)
         return x + shortcut
