@@ -7,7 +7,7 @@ cnn:
     - 3
     - 3
   - depth: 16
-    group_norm_num_groups: 32
+    group_norm_num_groups: 16
     kernel_size:
     - 3
     - 3
