@@ -98,7 +98,7 @@ class Classifier(tf.Module):
         if self.flatten_size != (x.shape[3]):
             raise ValueError("Flatten size does not match output tensor shape")
 
-        x = tf.avg_pool2d(x, [x.shape[1], x.shape[2]], strides=1, padding="VALID")
+        x = tf.nn.avg_pool2d(x, [x.shape[1], x.shape[2]], strides=1, padding="VALID")
 
         x = tf.reshape(x, [-1, self.flatten_size])
 
