@@ -6,6 +6,16 @@ cnn:
     kernel_size:
     - 3
     - 3
+  - depth: 16
+    group_norm_num_groups: 32
+    kernel_size:
+    - 3
+    - 3
+  - depth: 32
+    group_norm_num_groups: 32
+    kernel_size:
+    - 3
+    - 3
   - depth: 32
     group_norm_num_groups: 32
     kernel_size:
@@ -16,17 +26,7 @@ cnn:
     kernel_size:
     - 3
     - 3
-  - depth: 128
-    group_norm_num_groups: 32
-    kernel_size:
-    - 3
-    - 3
-  - depth: 256
-    group_norm_num_groups: 32
-    kernel_size:
-    - 3
-    - 3
-  - depth: 512
+  - depth: 64
     group_norm_num_groups: 32
     kernel_size:
     - 3
