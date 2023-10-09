@@ -50,11 +50,7 @@ class Classifier(tf.Module):
         self.pool_size = pool_size
         self.dropout_prob = dropout_prob
 
-        num_max_pools = 1
-        output_depth = layer_depths[-1]
-        self.flatten_size = int(
-            (input_size // (2 ** num_max_pools)) ** 2 * output_depth
-        )
+        self.flatten_size = layer_depths[-1]
 
         self.residual_blocks = []
         for layer_depth, layer_kernel_size, group_norm_num in zip(
@@ -99,10 +95,12 @@ class Classifier(tf.Module):
 
         x = tf.nn.dropout(x, rate=self.dropout_prob)
 
-        if self.flatten_size != (x.shape[1] * x.shape[2] * x.shape[3]):
+        if self.flatten_size != (x.shape[3]):
             raise ValueError("Flatten size does not match output tensor shape")
 
-        output_flattened = tf.reshape(x, [-1, self.flatten_size])
+        x = tf.avg_pool2d(x, [x.shape[1], x.shape[2]], strides=1, padding="VALID")
 
-        x = self.fully_connected(output_flattened)
+        x = tf.reshape(x, [-1, self.flatten_size])
+
+        x = self.fully_connected(x)
         return x
