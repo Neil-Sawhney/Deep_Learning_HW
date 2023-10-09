@@ -23,4 +23,4 @@ git add -A
 git commit -m "hypertests: 5"
 git push
 
-sudo shutdown -h now
+runpodctl stop pod rj0q47mezg2nw7
