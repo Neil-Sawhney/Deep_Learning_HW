@@ -2,22 +2,22 @@ cnn:
   augmentation_multiplier: 0.1
   layers:
   - depth: 32
-    group_norm_num_groups: 20
+    group_norm_num_groups: 32
     kernel_size:
     - 3
     - 3
   - depth: 64
-    group_norm_num_groups: 20
+    group_norm_num_groups: 32
     kernel_size:
     - 3
     - 3
   - depth: 128
-    group_norm_num_groups: 20
+    group_norm_num_groups: 32
     kernel_size:
     - 3
     - 3
   - depth: 256
-    group_norm_num_groups: 20
+    group_norm_num_groups: 32
     kernel_size:
     - 3
     - 3
@@ -39,7 +39,7 @@ learning:
   - 0.00005
   - 0.00001
   num_iters: 100000
-  weight_decay: 0.2
+  weight_decay: 0.05
 mlp:
   hidden_layer_width: 1000
   num_hidden_layers: 2

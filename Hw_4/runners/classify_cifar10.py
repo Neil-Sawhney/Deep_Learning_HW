@@ -270,6 +270,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
                 learning_rate_index += 1
                 adam.learning_rate = learning_rates[learning_rate_index]
                 learning_rate_change_steps = np.append(learning_rate_change_steps, i)
+                minimum_val_step_num = i
                 checkpoint_manager.restore_or_initialize()
 
     checkpoint_manager.restore_or_initialize()

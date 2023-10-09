@@ -6,8 +6,18 @@
     "configurations": [
 
 
+
         {
             "name": "Debug cifar10",
+            "type": "python",
+            "request": "launch",
+            "program": "./main.py",
+            "args": ["./runners/classify_cifar10.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug cifar100",
             "type": "python",
             "request": "launch",
             "program": "./main.py",
