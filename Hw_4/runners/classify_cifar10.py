@@ -237,21 +237,21 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
         adam.apply_gradients(zip(grads, classifier.trainable_variables))
 
-        (
-            current_val_loss,
-            minimum_val_loss,
-            minimum_val_step_num,
-        ) = val_loss(
-            classifier,
-            val_images,
-            val_labels,
-            checkpoint_manager,
-            minimum_val_loss,
-            minimum_val_step_num,
-            i,
-        )
-
         if i % refresh_rate == (refresh_rate - 1):
+            (
+                current_val_loss,
+                minimum_val_loss,
+                minimum_val_step_num,
+            ) = val_loss(
+                classifier,
+                val_images,
+                val_labels,
+                checkpoint_manager,
+                minimum_val_loss,
+                minimum_val_step_num,
+                i,
+            )
+
             y_val_loss = np.append(y_val_loss, current_val_loss)
             current_train_batch_loss = current_train_batch_loss.numpy()
             y_train_batch_loss = np.append(y_train_batch_loss, current_train_batch_loss)
