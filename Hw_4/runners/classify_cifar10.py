@@ -116,8 +116,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
     num_classes = 10
     train_labels = train_and_val_labels[:-10000]
     train_images = train_and_val_images[:-10000]
-    val_labels = train_and_val_labels[-10000:]
-    val_images = train_and_val_images[-10000:]
+    val_labels = train_and_val_labels[-100:]
+    val_images = train_and_val_images[-100:]
 
     test_labels, test_images = load_pickle_data("data/cifar-10-batches-py/test_batch")
 
