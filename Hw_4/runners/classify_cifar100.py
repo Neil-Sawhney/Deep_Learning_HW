@@ -174,7 +174,6 @@ def run(config_path: Path, use_last_checkpoint: bool):
     print(f"\nNumber of Parameters => {num_of_parameters}")
 
     augment_data = AugmentData(augmentation_multiplier)
-    train_labels, train_images = augment_data(train_labels, train_images)
     for i in bar:
         batch_indices = rng.uniform(
             shape=[batch_size], maxval=num_samples, dtype=tf.int32
@@ -182,6 +181,11 @@ def run(config_path: Path, use_last_checkpoint: bool):
         with tf.GradientTape() as tape:
             train_images_batch = tf.gather(train_images, batch_indices)
             train_labels_batch = tf.gather(train_labels, batch_indices)
+
+            train_labels_batch, train_images_batch = augment_data(
+                train_labels_batch, train_images_batch
+            )
+
             current_train_batch_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=tf.squeeze(train_labels_batch),

@@ -26,7 +26,7 @@ def train_batch_accuracy(classifier, train_images_batch, train_labels_batch):
     )
 
 
-def val_accuracy(classifier, val_images, val_labels):
+def val_batch_accuracy(classifier, val_images, val_labels):
     return tf.reduce_mean(
         tf.cast(
             tf.equal(
@@ -56,7 +56,7 @@ def top_5_test_accuracy(classifier, test_images, test_labels):
     )
 
 
-def val_loss(
+def val_batch_loss(
     classifier,
     val_images,
     val_labels,
@@ -64,10 +64,17 @@ def val_loss(
     minimum_val_loss,
     minimum_val_step,
     current_step,
+    batch_size,
 ):
+    batch_indices = tf.random.uniform(
+        shape=[batch_size], maxval=val_images.shape[0], dtype=tf.int32
+    )
+
+    val_labels_batch = tf.gather(val_labels, batch_indices)
+    val_images_batch = tf.gather(val_images, batch_indices)
     validation_loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels=tf.squeeze(val_labels), logits=classifier(val_images)
+            labels=tf.squeeze(val_labels_batch), logits=classifier(val_images_batch)
         )
     )
 
@@ -185,7 +192,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             train_images_batch = tf.gather(train_images, batch_indices)
             train_labels_batch = tf.gather(train_labels, batch_indices)
 
-            train_labels_batch_augmented, train_images_batch_augmented = augment_data(
+            train_labels_batch, train_images_batch = augment_data(
                 train_labels_batch, train_images_batch
             )
             current_train_batch_loss = tf.reduce_mean(
@@ -205,7 +212,11 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
         adam.apply_gradients(zip(grads, classifier.trainable_variables))
 
-        current_validation_loss, minimum_val_loss, minimum_val_step_num = val_loss(
+        (
+            current_validation_loss,
+            minimum_val_loss,
+            minimum_val_step_num,
+        ) = val_batch_loss(
             classifier,
             val_images,
             val_labels,
@@ -213,6 +224,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             minimum_val_loss,
             minimum_val_step_num,
             i,
+            batch_size,
         )
 
         y_val_loss = np.append(y_val_loss, current_validation_loss)
@@ -224,7 +236,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             current_batch_accuracy = train_batch_accuracy(
                 classifier, train_images_batch, train_labels_batch
             )
-            current_validation_accuracy = val_accuracy(
+            current_validation_accuracy = val_batch_accuracy(
                 classifier, val_images, val_labels
             )
 
