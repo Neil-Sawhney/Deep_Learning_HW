@@ -3,22 +3,22 @@ cnn:
   layers:
   # TEST
   - depth: 64
-    group_norm_num_groups: 32
+    group_norm_num_groups: 20
     kernel_size:
     - 3
     - 3
   - depth: 128
-    group_norm_num_groups: 32
+    group_norm_num_groups: 20
     kernel_size:
     - 3
     - 3
   - depth: 256
-    group_norm_num_groups: 32
+    group_norm_num_groups: 20
     kernel_size:
     - 3
     - 3
   - depth: 512
-    group_norm_num_groups: 32
+    group_norm_num_groups: 20
     kernel_size:
     - 3
     - 3
@@ -43,4 +43,4 @@ learning:
   weight_decay: 0.2
 mlp:
   hidden_layer_width: 1000
-  num_hidden_layers: 1
+  num_hidden_layers: 2
