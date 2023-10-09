@@ -28,8 +28,15 @@ cnn:
     - 3
   pool_size: 2
   resblock_size: 2
+  - depth: 512
+    group_norm_num_groups: 32
+    kernel_size:
+    - 3
+    - 3
+  pool_size: 2
+  resblock_size: 2
 display:
-  refresh_rate: 5
+  refresh_rate: 10
 learning:
   batch_size: 200
   dropout_prob: 0.2

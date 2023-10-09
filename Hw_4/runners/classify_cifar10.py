@@ -32,15 +32,30 @@ def val_accuracy(classifier, val_images, val_labels):
         batch_indices = tf.range(i, i + val_images.shape[0] // 100)
         val_batch_images = tf.gather(val_images, batch_indices)
         val_batch_labels = tf.gather(val_labels, batch_indices)
-        val_accuracy += tf.reduce_mean(
-            tf.cast(
-                tf.equal(
-                    classifier(val_batch_images).numpy().argmax(axis=1),
-                    val_batch_labels.numpy().reshape(-1),
-                ),
-                tf.float32,
+        if i == 0:
+            val_accuracy = tf.reduce_mean(
+                tf.cast(
+                    tf.equal(
+                        classifier(val_batch_images).numpy().argmax(axis=1),
+                        val_batch_labels.numpy().reshape(-1),
+                    ),
+                    tf.float32,
+                )
+            ) / (val_images.shape[0])
+        else:
+            val_accuracy += (
+                tf.reduce_mean(
+                    tf.cast(
+                        tf.equal(
+                            classifier(val_batch_images).numpy().argmax(axis=1),
+                            val_batch_labels.numpy().reshape(-1),
+                        ),
+                        tf.float32,
+                    )
+                )
+                / val_images.shape[0]
             )
-        )
+    return val_accuracy.numpy()
 
 
 def test_accuracy(classifier, test_images, test_labels):
@@ -236,12 +251,12 @@ def run(config_path: Path, use_last_checkpoint: bool):
             i,
         )
 
-        y_val_loss = np.append(y_val_loss, current_val_loss)
-        current_train_batch_loss = current_train_batch_loss.numpy()
-        y_train_batch_loss = np.append(y_train_batch_loss, current_train_batch_loss)
-        x_loss_iterations = np.append(x_loss_iterations, i)
-
         if i % refresh_rate == (refresh_rate - 1):
+            y_val_loss = np.append(y_val_loss, current_val_loss)
+            current_train_batch_loss = current_train_batch_loss.numpy()
+            y_train_batch_loss = np.append(y_train_batch_loss, current_train_batch_loss)
+            x_loss_iterations = np.append(x_loss_iterations, i)
+
             current_batch_accuracy = train_batch_accuracy(
                 classifier, train_images_batch, train_labels_batch
             )
