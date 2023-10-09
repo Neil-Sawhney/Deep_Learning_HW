@@ -50,7 +50,7 @@ class Classifier(tf.Module):
         self.pool_size = pool_size
         self.dropout_prob = dropout_prob
 
-        num_max_pools = len(layer_depths)
+        num_max_pools = 1
         output_depth = layer_depths[-1]
         self.flatten_size = int(
             (input_size // (2 ** num_max_pools)) ** 2 * output_depth
