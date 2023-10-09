@@ -311,10 +311,10 @@ def run(config_path: Path, use_last_checkpoint: bool):
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     file_index = 0
-    while Path(f"artifacts/classify_cifar10_img_{file_index}.png").exists():
+    while Path(f"artifacts/classify_cifar100_img_{file_index}.png").exists():
         file_index += 1
-    fig.savefig(f"artifacts/classify_cifar10_img_{file_index}.png")
+    fig.savefig(f"artifacts/classify_cifar100_img_{file_index}.png")
 
     # Save the config file as a yaml under the same name as the image
-    config_path = Path(f"artifacts/classify_cifar10_img_{file_index}.yaml")
+    config_path = Path(f"artifacts/classify_cifar100_img_{file_index}.yaml")
     config_path.write_text(yaml.dump(config))
