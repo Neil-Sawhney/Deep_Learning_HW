@@ -33,6 +33,7 @@ class ResidualBlock(tf.Module):
                 Conv2D(input_depth, output_depth, kernel_size)
             )
             input_depth = output_depth
+
         self.group_norm = GroupNorm(group_norm_num_groups, output_depth)
 
     def __call__(self, x: tf.Tensor) -> tf.Tensor:
