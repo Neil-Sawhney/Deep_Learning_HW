@@ -21,6 +21,11 @@ cnn:
     kernel_size:
     - 3
     - 3
+  - depth: 128
+    group_norm_num_groups: 32
+    kernel_size:
+    - 3
+    - 3
   pool_size: 2
   resblock_size: 2
 display:
