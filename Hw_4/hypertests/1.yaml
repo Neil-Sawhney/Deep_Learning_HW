@@ -1,11 +1,6 @@
 cnn:
   augmentation_multiplier: 0.2
   layers:
-  - depth: 8
-    group_norm_num_groups: 8
-    kernel_size:
-    - 3
-    - 3
   - depth: 16
     group_norm_num_groups: 16
     kernel_size:
