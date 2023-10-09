@@ -53,8 +53,7 @@ class Classifier(tf.Module):
         num_max_pools = 1
         output_depth = layer_depths[-1]
         self.flatten_size = int(
-            (input_size // (self.pool_size ** (num_max_pools))) ** num_max_pools
-            * output_depth
+            (input_size - num_max_pools) ** 2 * output_depth
         )
 
         self.residual_blocks = []
