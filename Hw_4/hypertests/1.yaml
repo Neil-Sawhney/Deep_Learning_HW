@@ -68,5 +68,5 @@ learning:
   num_iters: 1000000
   weight_decay: 0.005
 mlp:
-  hidden_layer_width: 16
+  hidden_layer_width: 200
   num_hidden_layers: 1

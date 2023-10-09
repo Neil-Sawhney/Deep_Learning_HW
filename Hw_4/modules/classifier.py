@@ -103,4 +103,5 @@ class Classifier(tf.Module):
         x = tf.reshape(x, [-1, self.flatten_size])
 
         x = self.fully_connected(x)
+
         return x
