@@ -30,7 +30,11 @@ class ResidualBlock(tf.Module):
         self.conv_layers = []
         for _ in range(self.resblock_size):
             self.conv_layers.append(
-                Conv2D(input_depth, output_depth, kernel_size)
+                [
+                    Conv2D(input_depth, output_depth, kernel_size),
+                    Conv2D(output_depth, output_depth, kernel_size),
+                    Conv2D(output_depth, output_depth, kernel_size),
+                ]
             )
             input_depth = output_depth
         self.group_norm = GroupNorm(group_norm_num_groups, output_depth)
@@ -38,10 +42,8 @@ class ResidualBlock(tf.Module):
     def __call__(self, x: tf.Tensor) -> tf.Tensor:
         shortcut = self.shortcut_conv(x)
         for conv_layer in self.conv_layers:
-            x = conv_layer(x)
-            x = conv_layer(x)
-            x = conv_layer(x)
-            x = conv_layer(x)
+            for conv in conv_layer:
+                x = conv(x)
             x = self.group_norm(x)
             x = tf.nn.relu(x)
         return x + shortcut
