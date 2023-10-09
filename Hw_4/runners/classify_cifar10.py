@@ -41,7 +41,7 @@ def val_accuracy(classifier, val_images, val_labels):
                     ),
                     tf.float32,
                 )
-            ) / (val_images.shape[0])
+            ) / (val_images.shape[0] // 100)
         else:
             val_accuracy += (
                 tf.reduce_mean(
@@ -53,7 +53,7 @@ def val_accuracy(classifier, val_images, val_labels):
                         tf.float32,
                     )
                 )
-                / val_images.shape[0]
+                / (val_images.shape[0] // 100)
             )
     return val_accuracy.numpy()
 
@@ -99,9 +99,9 @@ def val_loss(
 
         # average the validation loss over the batches
         if i == 0:
-            validation_loss = validation_loss / (val_images.shape[0])
+            validation_loss = validation_loss / (val_images.shape[0] // 100)
         else:
-            validation_loss += validation_loss / (val_images.shape[0])
+            validation_loss += validation_loss / (val_images.shape[0] // 100)
 
     if validation_loss < minimum_val_loss:
         minimum_val_loss = validation_loss
