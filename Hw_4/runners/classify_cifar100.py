@@ -26,7 +26,7 @@ def train_batch_accuracy(classifier, train_images_batch, train_labels_batch):
     )
 
 
-def val_batch_accuracy(classifier, val_images, val_labels):
+def val_accuracy(classifier, val_images, val_labels):
     return tf.reduce_mean(
         tf.cast(
             tf.equal(
@@ -56,7 +56,7 @@ def top_5_test_accuracy(classifier, test_images, test_labels):
     )
 
 
-def val_batch_loss(
+def val_loss(
     classifier,
     val_images,
     val_labels,
@@ -64,17 +64,10 @@ def val_batch_loss(
     minimum_val_loss,
     minimum_val_step,
     current_step,
-    batch_size,
 ):
-    batch_indices = tf.random.uniform(
-        shape=[batch_size], maxval=val_images.shape[0], dtype=tf.int32
-    )
-
-    val_labels_batch = tf.gather(val_labels, batch_indices)
-    val_images_batch = tf.gather(val_images, batch_indices)
     validation_loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels=tf.squeeze(val_labels_batch), logits=classifier(val_images_batch)
+            labels=tf.squeeze(val_labels), logits=classifier(val_images)
         )
     )
 
@@ -143,7 +136,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     )
 
     minimum_val_step_num = 0
-    current_val_batch_loss = 0
+    current_val_loss = 0
 
     # Used For Plotting
     y_train_batch_accuracy = np.array([])
@@ -204,28 +197,27 @@ def run(config_path: Path, use_last_checkpoint: bool):
         if i == 0:
             print("\n\n\n\n")
             print(f"Initial Training Loss => {current_train_batch_loss:0.4f}")
-            minimum_val_batch_loss = current_train_batch_loss
+            minimum_val_loss = current_train_batch_loss
 
         grads = tape.gradient(current_train_batch_loss, classifier.trainable_variables)
 
         adam.apply_gradients(zip(grads, classifier.trainable_variables))
 
         (
-            current_val_batch_loss,
-            minimum_val_batch_loss,
+            current_val_loss,
+            minimum_val_loss,
             minimum_val_step_num,
-        ) = val_batch_loss(
+        ) = val_loss(
             classifier,
             val_images,
             val_labels,
             checkpoint_manager,
-            minimum_val_batch_loss,
+            minimum_val_loss,
             minimum_val_step_num,
             i,
-            batch_size,
         )
 
-        y_val_loss = np.append(y_val_loss, current_val_batch_loss)
+        y_val_loss = np.append(y_val_loss, current_val_loss)
         current_train_batch_loss = current_train_batch_loss.numpy()
         y_train_batch_loss = np.append(y_train_batch_loss, current_train_batch_loss)
         x_loss_iterations = np.append(x_loss_iterations, i)
@@ -234,7 +226,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             current_batch_accuracy = train_batch_accuracy(
                 classifier, train_images_batch, train_labels_batch
             )
-            current_validation_accuracy = val_batch_accuracy(
+            current_validation_accuracy = val_accuracy(
                 classifier, val_images, val_labels
             )
 
@@ -248,7 +240,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             used_patience = i - minimum_val_step_num
             patience_left = learning_patience - used_patience
             overall_description = (
-                f"Minimum Val Batch Loss => {minimum_val_batch_loss:0.4f}    "
+                f"Minimum Val Loss => {minimum_val_loss:0.4f}    "
                 + f"Learning Rates Left => {learning_rates_left}    "
                 + f"Patience Left => {patience_left}    "
             )
@@ -263,7 +255,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
             train_log.update(refresh_rate)
 
             val_description = (
-                f"Val Batch Loss => {current_val_batch_loss:0.4f}    "
+                f"Val Loss => {current_val_loss:0.4f}    "
                 + f"Val Accuracy => {current_validation_accuracy:0.4f}    "
             )
             val_log.set_description_str(val_description)
@@ -275,7 +267,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
             # if the validation loss has not improved for learning_patience
             if (
-                current_val_batch_loss > minimum_val_batch_loss
+                current_val_loss > minimum_val_loss
                 and i - minimum_val_step_num > learning_patience
             ):
                 if learning_rate_index == (len(learning_rates) - 1):
@@ -300,7 +292,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     ax[0].legend()
 
     ax[1].semilogy(x_loss_iterations, y_train_batch_loss, label="Train Batch Loss")
-    ax[1].semilogy(x_loss_iterations, y_val_loss, label="Val Batch Loss")
+    ax[1].semilogy(x_loss_iterations, y_val_loss, label="Val Loss")
     for learning_rate_change_step in learning_rate_change_steps:
         ax[1].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
     ax[1].set_xlabel("Iterations")
