@@ -53,7 +53,7 @@ class Classifier(tf.Module):
         num_max_pools = len(layer_depths)
         output_depth = layer_depths[-1]
         self.flatten_size = int(
-            (input_size - num_max_pools) ** 2 * output_depth
+            (input_size // (2 ** num_max_pools)) ** 2 * output_depth
         )
 
         self.residual_blocks = []
@@ -95,7 +95,7 @@ class Classifier(tf.Module):
         for residual_block in self.residual_blocks:
             x = residual_block(x)
 
-            x = tf.nn.max_pool2d(x, self.pool_size, strides=1, padding="VALID")
+        x = tf.nn.max_pool2d(x, self.pool_size, strides=2, padding="VALID")
 
         x = tf.nn.dropout(x, rate=self.dropout_prob)
 
