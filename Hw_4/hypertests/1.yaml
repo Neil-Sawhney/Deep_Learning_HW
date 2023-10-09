@@ -26,7 +26,7 @@ cnn:
     kernel_size:
     - 3
     - 3
-  pool_size: 2
+  pool_size: 4
   resblock_size: 2
 display:
   refresh_rate: 5
