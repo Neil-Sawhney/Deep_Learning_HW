@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug AGNews",
+            "type": "python",
+            "request": "launch",
+            "program": "./main.py",
+            "args": ["./runners/classify_agnews.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug cifar10",
+            "type": "python",
+            "request": "launch",
+            "program": "./main.py",
+            "args": ["./runners/classify_cifar10.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug cifar100",
+            "type": "python",
+            "request": "launch",
+            "program": "./main.py",
+            "args": ["./runners/classify_cifar100.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug cifar10 with last checkpoint",
+            "type": "python",
+            "request": "launch",
+            "program": "./main.py",
+            "args": ["./runners/classify_cifar10.py", "-r"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
