@@ -25,6 +25,7 @@ def train_batch_accuracy(classifier, train_text_batch, train_labels_batch):
 
 def val_accuracy(classifier, val_text, val_labels):
     val_accuracy = 0
+    val_text = tf.convert_to_tensor(val_text)
     for i in range(0, val_text.shape[0], val_text.shape[0] // 100):
         batch_indices = tf.range(i, i + val_text.shape[0] // 100)
         val_batch_text = tf.gather(val_text, batch_indices)
@@ -61,6 +62,7 @@ def val_loss(
     minimum_val_step,
     current_step,
 ):
+    val_text = tf.convert_to_tensor(val_text)
     validation_loss = 0
 
     for i in range(0, val_text.shape[0], val_text.shape[0] // 100):
@@ -123,7 +125,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     val_labels = train_and_val_labels[-10000:]
     val_text = train_and_val_text[-10000:]
 
-    num_samples = num_word_to_tokenize*embedding_depth
+    num_samples = num_word_to_tokenize * embedding_depth
 
     embed_classifier = EmbedClassifier(
         num_embeddings,
@@ -311,10 +313,10 @@ def run(config_path: Path, use_last_checkpoint: bool):
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     file_index = 0
-    while Path(f"artifacts/classify_cifar10_img_{file_index}.png").exists():
+    while Path(f"artifacts/agnews/classify_agnews_{file_index}.png").exists():
         file_index += 1
-    fig.savefig(f"artifacts/classify_cifar10_img_{file_index}.png")
+    fig.savefig(f"artifacts/agnews/classify_agnews_img_{file_index}.png")
 
     # Save the config file as a yaml under the same name as the image
-    config_path = Path(f"artifacts/classify_cifar10_img_{file_index}.yaml")
+    config_path = Path(f"artifacts/agnews/classify_agnews_img_{file_index}.yaml")
     config_path.write_text(yaml.dump(config))

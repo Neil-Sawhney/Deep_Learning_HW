@@ -21,8 +21,8 @@ class Adam:
         for grad, var in grads_and_vars:
             m = tf.Variable(tf.zeros(shape=var.shape))
             v = tf.Variable(tf.zeros(shape=var.shape))
-            m.assign(self.beta_1 * m + (1 - self.beta_1) * grad)
-            v.assign(self.beta_2 * v + (1 - self.beta_2) * grad ** 2)
+            m.assign(self.beta_1 * m + (1 - self.beta_1) * tf.convert_to_tensor(grad))
+            v.assign(self.beta_2 * v + (1 - self.beta_2) * tf.convert_to_tensor(grad) ** 2)
             m_hat = m / (1 - self.beta_1)
             v_hat = v / (1 - self.beta_2)
             var.assign(var - self.learning_rate * m_hat /
