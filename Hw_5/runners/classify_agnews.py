@@ -140,7 +140,7 @@ def val_check(
     )
 
 
-def run(config_path: Path, use_last_checkpoint: bool):
+def train(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
         config_path = Path("configs/classify_agnews_config.yaml")
 
@@ -349,6 +349,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
                 checkpoint_manager.restore_or_initialize()
 
     checkpoint_manager.restore_or_initialize()
+    current_validation_accuracy = val_accuracy(embed_classifier, val_text, val_labels)
 
     fig, ax = plt.subplots(2, 1)
 
@@ -398,3 +399,47 @@ def run(config_path: Path, use_last_checkpoint: bool):
         tensor_names=["EmbedClassifier/embedding"],
         data=[embed_classifier.embedding],
     )
+
+def test(model_path: Path):
+    if model_path is None:
+        model_path = Path("artifacts/agnews/classify_agnews_model")
+
+    if (not model_path.exists()):
+        print("Model does not exist, run the train script first")
+        return
+
+    model = tf.raw_ops.Restore(
+        file_pattern=model_path,
+        tensor_names=["EmbedClassifier/embedding"],
+        shape_and_slices=[tf.constant([100, 50])],
+        dtypes=[tf.float32],
+    )
+
+    dataset = load_dataset("ag_news")
+    test_labels = dataset["test"]["label"]
+    test_text = dataset["test"]["text"]
+
+    test_text = tf.convert_to_tensor(test_text)
+    test_labels = tf.convert_to_tensor(test_labels)
+
+    test_accuracy = 0
+
+    for i in range(0, test_text.shape[0], test_text.shape[0] // 100):
+        batch_indices = tf.range(i, i + test_text.shape[0] // 100)
+        test_batch_text = tf.gather(test_text, batch_indices)
+        test_batch_labels = tf.gather(test_labels, batch_indices)
+        test_accuracy += tf.reduce_mean(
+            tf.cast(
+                tf.equal(
+                    model(test_batch_text).numpy().argmax(axis=1),
+                    test_batch_labels.numpy().reshape(-1),
+                ),
+                tf.float32,
+            )
+        ) / (test_text.shape[0] // 100)
+
+    print(f"Test Accuracy => {test_accuracy:0.4f}")
+
+    file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
+    file.write(f"{test_accuracy:0.4f}")
+    file.close()

@@ -8,7 +8,7 @@
             "name": "Debug AGNews",
             "type": "python",
             "request": "launch",
-            "program": "./main.py",
+            "program": "./train.py",
             "args": ["./runners/classify_agnews.py"],
             "console": "integratedTerminal",
             "justMyCode": true
@@ -17,7 +17,7 @@
             "name": "Debug cifar10",
             "type": "python",
             "request": "launch",
-            "program": "./main.py",
+            "program": "./train.py",
             "args": ["./runners/classify_cifar10.py"],
             "console": "integratedTerminal",
             "justMyCode": true
@@ -26,7 +26,7 @@
             "name": "Debug cifar100",
             "type": "python",
             "request": "launch",
-            "program": "./main.py",
+            "program": "./train.py",
             "args": ["./runners/classify_cifar100.py"],
             "console": "integratedTerminal",
             "justMyCode": true
@@ -35,7 +35,7 @@
             "name": "Debug cifar10 with last checkpoint",
             "type": "python",
             "request": "launch",
-            "program": "./main.py",
+            "program": "./train.py",
             "args": ["./runners/classify_cifar10.py", "-r"],
             "console": "integratedTerminal",
             "justMyCode": true

@@ -111,7 +111,7 @@ def val_loss(
     return validation_loss, minimum_val_loss, minimum_val_step
 
 
-def run(config_path: Path, use_last_checkpoint: bool):
+def train(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
         config_path = Path("configs/classify_cifar_config.yaml")
 
