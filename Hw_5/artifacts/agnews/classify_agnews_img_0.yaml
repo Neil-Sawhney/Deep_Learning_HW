@@ -1,10 +1,12 @@
+data:
+  num_words_to_tokenize: 50
 display:
   refresh_rate: 5
 learning:
-  val_check_rate: 10
   batch_size: 500
   dropout_prob: 0.2
-  learning_patience: 20 
+  embedding_depth: 10
+  learning_patience: 20
   learning_rates:
   - 0.0005
   - 0.0001
@@ -12,14 +14,12 @@ learning:
   - 0.001
   - 0.0005
   - 0.0001
-  - 0.00005
-  - 0.00001
-  num_iters: 100000
-  weight_decay: 0.2
+  - 5.0e-05
+  - 1.0e-05
   num_embeddings: 10
-  embedding_depth: 5000 
+  num_iters: 100000
+  val_check_rate: 10
+  weight_decay: 0.2
 mlp:
-  hidden_layer_width: 200
-  num_hidden_layers: 2
-data:
-  num_words_to_tokenize: 50
+  hidden_layer_width: 1000
+  num_hidden_layers: 4

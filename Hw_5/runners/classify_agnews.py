@@ -89,6 +89,57 @@ def val_loss(
     return validation_loss, minimum_val_loss, minimum_val_step
 
 
+def val_check(
+    classifier,
+    val_text,
+    val_labels,
+    checkpoint_manager,
+    minimum_val_loss,
+    minimum_val_step_num,
+    current_step,
+    val_check_rate,
+    y_val_loss,
+    y_val_accuracy,
+    used_patience,
+    current_val_loss,
+    current_validation_accuracy,
+    x_val_iterations,
+):
+    if current_step % val_check_rate == (val_check_rate - 1):
+        (
+            current_val_loss,
+            minimum_val_loss,
+            minimum_val_step_num,
+        ) = val_loss(
+            classifier,
+            val_text,
+            val_labels,
+            checkpoint_manager,
+            minimum_val_loss,
+            minimum_val_step_num,
+            current_step,
+        )
+        x_val_iterations = np.append(x_val_iterations, current_step)
+
+        y_val_loss = np.append(y_val_loss, current_val_loss)
+
+        current_validation_accuracy = val_accuracy(classifier, val_text, val_labels)
+
+        y_val_accuracy = np.append(y_val_accuracy, current_validation_accuracy)
+        used_patience = current_step - minimum_val_step_num
+
+    return (
+        used_patience,
+        minimum_val_loss,
+        minimum_val_step_num,
+        current_validation_accuracy,
+        current_val_loss,
+        y_val_loss,
+        y_val_accuracy,
+        x_val_iterations,
+    )
+
+
 def run(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
         config_path = Path("configs/classify_agnews_config.yaml")
@@ -102,6 +153,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
     learning_rates = config["learning"]["learning_rates"]
     num_embeddings = config["learning"]["num_embeddings"]
     embedding_depth = config["learning"]["embedding_depth"]
+    val_check_rate = config["learning"]["val_check_rate"]
 
     refresh_rate = config["display"]["refresh_rate"]
 
@@ -117,16 +169,19 @@ def run(config_path: Path, use_last_checkpoint: bool):
     train_and_val_labels = dataset["train"]["label"]
     train_and_val_text = dataset["train"]["text"]
 
-    num_classes = 4
-
     # use 10,000 training samples for validation
     train_labels = train_and_val_labels[:-10000]
-    train_text = train_and_val_text[:-10000]
+    train_text = tf.convert_to_tensor(train_and_val_text[:-10000])
     val_labels = train_and_val_labels[-10000:]
     val_text = train_and_val_text[-10000:]
 
-    num_samples = num_word_to_tokenize * embedding_depth
+    minimum_val_step_num = 0
+    current_val_loss = 0
+    used_patience = 0
+    current_val_loss = -1
+    current_validation_accuracy = -1
 
+    num_classes = 4
     embed_classifier = EmbedClassifier(
         num_embeddings,
         embedding_depth,
@@ -137,16 +192,14 @@ def run(config_path: Path, use_last_checkpoint: bool):
         num_classes,
     )
 
-    minimum_val_step_num = 0
-    current_val_loss = 0
-
     # Used For Plotting
     y_train_batch_accuracy = np.array([])
     y_train_batch_loss = np.array([])
     y_val_accuracy = np.array([])
     y_val_loss = np.array([])
-    x_loss_iterations = np.array([])
-    x_accuracy_iterations = np.array([])
+    x_train_loss_iterations = np.array([])
+    x_train_accuracy_iterations = np.array([])
+    x_val_iterations = np.array([])
 
     learning_rate_change_steps = np.array([])
 
@@ -160,7 +213,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     checkpoint = tf.train.Checkpoint(embed_classifier)
     checkpoint_manager = tf.train.CheckpointManager(
-        checkpoint, "temp/checkpoints/classify_numbers", max_to_keep=1
+        checkpoint, "temp/checkpoints/classify_agnews", max_to_keep=1
     )
     if use_last_checkpoint:
         print("\n\nRestoring from last checkpoint")
@@ -178,7 +231,7 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     for i in bar:
         batch_indices = rng.uniform(
-            shape=[batch_size], maxval=num_samples, dtype=tf.int32
+            shape=[batch_size], maxval=train_text.shape[0], dtype=tf.int32
         )
         with tf.GradientTape() as tape:
             train_text_batch = tf.gather(train_text, batch_indices)
@@ -195,7 +248,19 @@ def run(config_path: Path, use_last_checkpoint: bool):
         if i == 0:
             print("\n\n\n\n")
             print(f"Initial Training Loss => {current_train_batch_loss:0.4f}")
-            minimum_val_loss = current_train_batch_loss
+            _, minimum_val_loss, minimum_val_step_num = val_loss(
+                embed_classifier,
+                val_text,
+                val_labels,
+                checkpoint_manager,
+                np.inf,
+                i,
+                i,
+            )
+            current_validation_accuracy = val_accuracy(
+                embed_classifier, val_text, val_labels
+            )
+            current_val_loss = minimum_val_loss
 
         grads = tape.gradient(
             current_train_batch_loss, embed_classifier.trainable_variables
@@ -203,41 +268,46 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
         adam.apply_gradients(zip(grads, embed_classifier.trainable_variables))
 
+        (
+            used_patience,
+            minimum_val_loss,
+            minimum_val_step_num,
+            current_validation_accuracy,
+            current_val_loss,
+            y_val_loss,
+            y_val_accuracy,
+            x_val_iterations,
+        ) = val_check(
+            embed_classifier,
+            val_text,
+            val_labels,
+            checkpoint_manager,
+            minimum_val_loss,
+            minimum_val_step_num,
+            i,
+            val_check_rate,
+            y_val_loss,
+            y_val_accuracy,
+            used_patience,
+            current_val_loss,
+            current_validation_accuracy,
+            x_val_iterations,
+        )
+
+        current_train_batch_loss = current_train_batch_loss.numpy()
+        y_train_batch_loss = np.append(y_train_batch_loss, current_train_batch_loss)
+        x_train_loss_iterations = np.append(x_train_loss_iterations, i)
+
         if i % refresh_rate == (refresh_rate - 1):
-            (
-                current_val_loss,
-                minimum_val_loss,
-                minimum_val_step_num,
-            ) = val_loss(
-                embed_classifier,
-                val_text,
-                val_labels,
-                checkpoint_manager,
-                minimum_val_loss,
-                minimum_val_step_num,
-                i,
-            )
-
-            y_val_loss = np.append(y_val_loss, current_val_loss)
-            current_train_batch_loss = current_train_batch_loss.numpy()
-            y_train_batch_loss = np.append(y_train_batch_loss, current_train_batch_loss)
-            x_loss_iterations = np.append(x_loss_iterations, i)
-
             current_batch_accuracy = train_batch_accuracy(
                 embed_classifier, train_text_batch, train_labels_batch
             )
-            current_validation_accuracy = val_accuracy(
-                embed_classifier, val_text, val_labels
-            )
-
-            x_accuracy_iterations = np.append(x_accuracy_iterations, i)
+            x_train_accuracy_iterations = np.append(x_train_accuracy_iterations, i)
             y_train_batch_accuracy = np.append(
                 y_train_batch_accuracy, current_batch_accuracy
             )
-            y_val_accuracy = np.append(y_val_accuracy, current_validation_accuracy)
 
             learning_rates_left = len(learning_rates) - learning_rate_index
-            used_patience = i - minimum_val_step_num
             patience_left = learning_patience - used_patience
             overall_description = (
                 f"Minimum Val Loss => {minimum_val_loss:0.4f}    "
@@ -282,8 +352,10 @@ def run(config_path: Path, use_last_checkpoint: bool):
 
     fig, ax = plt.subplots(2, 1)
 
-    ax[0].plot(x_accuracy_iterations, y_train_batch_accuracy, label="Train Accuracy")
-    ax[0].plot(x_accuracy_iterations, y_val_accuracy, label="Val Accuracy")
+    ax[0].plot(
+        x_train_accuracy_iterations, y_train_batch_accuracy, label="Train Accuracy"
+    )
+    ax[0].plot(x_val_iterations, y_val_accuracy, label="Val Accuracy")
     # plot vertical line on learning rate change
     for learning_rate_change_step in learning_rate_change_steps:
         ax[0].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
@@ -291,8 +363,10 @@ def run(config_path: Path, use_last_checkpoint: bool):
     ax[0].set_ylabel("Accuracy")
     ax[0].legend()
 
-    ax[1].semilogy(x_loss_iterations, y_train_batch_loss, label="Train Batch Loss")
-    ax[1].semilogy(x_loss_iterations, y_val_loss, label="Val Loss")
+    ax[1].semilogy(
+        x_train_loss_iterations, y_train_batch_loss, label="Train Batch Loss"
+    )
+    ax[1].semilogy(x_val_iterations, y_val_loss, label="Val Loss")
     for learning_rate_change_step in learning_rate_change_steps:
         ax[1].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
     ax[1].set_xlabel("Iterations")
@@ -304,11 +378,8 @@ def run(config_path: Path, use_last_checkpoint: bool):
     print(f"Stop Iteration => {i}")
 
     fig.suptitle(
-        "Classify AGNews: Val Accuracy = " + f"{current_validation_accuracy:0.4f}"
+        "Classify AGNews: Final Val Accuracy = " + f"{current_validation_accuracy:0.4f}"
     )
-
-    # save the model
-    embed_classifier.save_weights("temp/weights/classify_agnews")
 
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
@@ -320,3 +391,10 @@ def run(config_path: Path, use_last_checkpoint: bool):
     # Save the config file as a yaml under the same name as the image
     config_path = Path(f"artifacts/agnews/classify_agnews_img_{file_index}.yaml")
     config_path.write_text(yaml.dump(config))
+
+    # save the model
+    tf.raw_ops.Save(
+        filename="artifacts/agnews/classify_agnews_model",
+        tensor_names=["EmbedClassifier/embedding"],
+        data=[embed_classifier.embedding],
+    )
