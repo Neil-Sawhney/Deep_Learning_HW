@@ -12,7 +12,7 @@ def main():
     parser.add_argument("runner", type=Path,
                         help="Path to the runner file")
     parser.add_argument("--model", "-m", type=Path,
-                        nargs='?', help="Path to the model file")
+                        nargs='?', help="Path to the model directory")
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()

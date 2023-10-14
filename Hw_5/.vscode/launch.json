@@ -4,6 +4,16 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+        {
+            "name": "Test AGNews",
+            "type": "python",
+            "request": "launch",
+            "program": "./test.py",
+            "args": ["./runners/classify_agnews.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
         {
             "name": "Debug AGNews",
             "type": "python",

@@ -140,6 +140,36 @@ def val_check(
     )
 
 
+def test_accuracy(classifier, test_images, test_labels):
+    test_accuracy = 0
+    test_images = tf.convert_to_tensor(test_images)
+    for i in range(0, test_images.shape[0], test_images.shape[0] // 100):
+        batch_indices = tf.range(i, i + test_images.shape[0] // 100)
+        test_batch_images = tf.gather(test_images, batch_indices)
+        test_batch_labels = tf.gather(test_labels, batch_indices)
+        if i == 0:
+            test_accuracy = tf.reduce_mean(
+                tf.cast(
+                    tf.equal(
+                        classifier(test_batch_images).numpy().argmax(axis=1),
+                        test_batch_labels.numpy().reshape(-1),
+                    ),
+                    tf.float32,
+                )
+            ) / 100
+        else:
+            test_accuracy += tf.reduce_mean(
+                tf.cast(
+                    tf.equal(
+                        classifier(test_batch_images).numpy().argmax(axis=1),
+                        test_batch_labels.numpy().reshape(-1),
+                    ),
+                    tf.float32,
+                )
+            ) / 100
+    return test_accuracy.numpy()
+
+
 def train(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
         config_path = Path("configs/classify_agnews_config.yaml")
@@ -385,7 +415,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     file_index = 0
-    while Path(f"artifacts/agnews/classify_agnews_{file_index}.png").exists():
+    while Path(f"artifacts/agnews/classify_agnews_img_{file_index}.png").exists():
         file_index += 1
     fig.savefig(f"artifacts/agnews/classify_agnews_img_{file_index}.png")
 
@@ -394,26 +424,45 @@ def train(config_path: Path, use_last_checkpoint: bool):
     config_path.write_text(yaml.dump(config))
 
     # save the model
-    tf.raw_ops.Save(
-        filename="artifacts/agnews/classify_agnews_model",
-        tensor_names=["EmbedClassifier/embedding"],
-        data=[embed_classifier.embedding],
-    )
+    checkpoint_manager.directory = "artifacts/agnews/model"
+    checkpoint_manager.save()
+    config_path = Path(f"artifacts/agnews/model.yaml")
+    config_path.write_text(yaml.dump(config))
+
 
 def test(model_path: Path):
     if model_path is None:
-        model_path = Path("artifacts/agnews/classify_agnews_model")
+        model_path = Path("artifacts/agnews/model")
 
     if (not model_path.exists()):
         print("Model does not exist, run the train script first")
         return
 
-    model = tf.raw_ops.Restore(
-        file_pattern=model_path,
-        tensor_names=["EmbedClassifier/embedding"],
-        shape_and_slices=[tf.constant([100, 50])],
-        dtypes=[tf.float32],
+    config_path = Path("artifacts/agnews/model/model.yaml")
+
+    config = yaml.safe_load(config_path.read_text())
+    dropout_prob = config["learning"]["dropout_prob"]
+    num_embeddings = config["learning"]["num_embeddings"]
+    embedding_depth = config["learning"]["embedding_depth"]
+
+    num_hidden_layers = config["mlp"]["num_hidden_layers"]
+    hidden_layer_width = config["mlp"]["hidden_layer_width"]
+
+    num_word_to_tokenize = config["data"]["num_words_to_tokenize"]
+
+    num_classes = 4
+    embed_classifier = EmbedClassifier(
+        num_embeddings,
+        embedding_depth,
+        num_word_to_tokenize,
+        dropout_prob,
+        num_hidden_layers,
+        hidden_layer_width,
+        num_classes,
     )
+
+    checkpoint = tf.train.Checkpoint(embed_classifier)
+    checkpoint.restore(tf.train.latest_checkpoint(model_path))
 
     dataset = load_dataset("ag_news")
     test_labels = dataset["test"]["label"]
@@ -422,24 +471,10 @@ def test(model_path: Path):
     test_text = tf.convert_to_tensor(test_text)
     test_labels = tf.convert_to_tensor(test_labels)
 
-    test_accuracy = 0
+    test_accuracy_value = test_accuracy(embed_classifier, test_text, test_labels)
 
-    for i in range(0, test_text.shape[0], test_text.shape[0] // 100):
-        batch_indices = tf.range(i, i + test_text.shape[0] // 100)
-        test_batch_text = tf.gather(test_text, batch_indices)
-        test_batch_labels = tf.gather(test_labels, batch_indices)
-        test_accuracy += tf.reduce_mean(
-            tf.cast(
-                tf.equal(
-                    model(test_batch_text).numpy().argmax(axis=1),
-                    test_batch_labels.numpy().reshape(-1),
-                ),
-                tf.float32,
-            )
-        ) / (test_text.shape[0] // 100)
-
-    print(f"Test Accuracy => {test_accuracy:0.4f}")
+    print(f"Test Accuracy => {test_accuracy_value:0.4f}")
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
-    file.write(f"{test_accuracy:0.4f}")
+    file.write(f"{test_accuracy_value:0.4f}")
     file.close()

@@ -9,5 +9,7 @@
 - View the results in ``` ./artifacts ```.
 
 ## This is my best attempt at agNews
-![Alt text](artifacts/agnews/classify_agnews_img_1.png)
+![Alt text](artifacts/agnews/classify_agnews_img_0.png)
+
+## My accuracy was 86.76% on the test set
 

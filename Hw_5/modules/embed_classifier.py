@@ -56,7 +56,17 @@ class EmbedClassifier(tf.Module):
         tokens = tf.strings.split(text, sep=" ")
 
         tokens = tokens[:, : self.num_word_to_tokenize]
+
         tokens = tokens.to_tensor(default_value="")
+
+        if tokens.shape[1] < self.num_word_to_tokenize:
+            tokens = tf.pad(
+                tokens,
+                [
+                    [0, 0],
+                    [0, self.num_word_to_tokenize - tokens.shape[1]],
+                ],
+            )
 
         hashed_tokens = tf.strings.to_hash_bucket_fast(tokens, self.num_embedding)
 
