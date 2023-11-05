@@ -3,6 +3,25 @@ import tensorflow as tf
 
 
 class PositionalEncoding(tf.Module):
+    """PositionalEncoding layer.
+
+    This is an implementation of positional encoding as described in the
+    paper "Attention is all you Need" (Vaswani et al., 2017).
+
+    This layer first calculates a positional encoding matrix, then adds it to
+    the inputs.
+
+    Args:
+        max_position: Maximum position to encode.
+        model_dim: Size of each attention head for value, query, and queue.
+
+    Call arguments:
+        inputs: Input `Tensor` of shape `(B, seq_len, model_dim)`.
+
+    Returns:
+        output: The result of the computation, of shape `(B, seq_len, model_dim)`,
+    """
+
     def __init__(self, max_position, model_dim):
         super(PositionalEncoding, self).__init__()
         self.positional_encoding = self._calculate_positional_encoding(

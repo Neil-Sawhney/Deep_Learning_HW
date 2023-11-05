@@ -2,6 +2,21 @@ import tensorflow as tf
 
 
 class EmbedText(tf.Module):
+    """Embeds text into a sequence of embeddings.
+
+    Args:
+        num_embedding: Number of embeddings to use.
+        embedding_depth: Depth of each embedding.
+        num_word_to_tokenize: Number of words to tokenize.
+
+    Call arguments:
+        text: Text to tokenize.
+
+    Returns:
+        embeddings: Embeddings of the tokens. Shape should be
+        [batch_size, num_word_to_tokenize * embedding_depth]
+    """
+
     def __init__(
         self,
         num_embedding,

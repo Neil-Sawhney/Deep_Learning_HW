@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-import helpers.embed_text as embed_text
-import modules.mlp as mlp
+from helpers.embed_text import EmbedText
+from modules.mlp import MLP
 
 
 class EmbedClassifier(tf.Module):
@@ -15,15 +15,14 @@ class EmbedClassifier(tf.Module):
         hidden_layer_width,
         num_classes,
     ):
-        rng = tf.random.get_global_generator()
 
-        self.embed_text = embed_text.EmbedText(
+        self.embed_text = EmbedText(
             num_embedding,
             embedding_depth,
             num_word_to_tokenize,
         )
 
-        self.mlp = mlp.MLP(
+        self.mlp = MLP(
             num_word_to_tokenize * embedding_depth,
             num_classes,
             num_hidden_layers,

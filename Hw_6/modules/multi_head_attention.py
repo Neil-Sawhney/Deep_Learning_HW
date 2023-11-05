@@ -30,13 +30,11 @@ class MultiHeadAttention(tf.Module):
     Call arguments:
         query: Query `Tensor` of shape `(B, seq_len, model_dim)`.
         value: Value `Tensor` of shape `(B, seq_len, model_dim)`.
-        key: Optional key `Tensor` of shape `(B, seq_len, model_dim)`. If not given, will
-            use `value` for both `key` and `value`, which is the most common
-            case.
+        key: Optional key `Tensor` of shape `(B, seq_len, model_dim)`. If not given, will use `value` for both `key` and `value`, which is the most common case.
+        mask: Optional mask tensor of shape `(B, seq_len, seq_len)`.
 
     Returns:
         output: The result of the computation, of shape `(B, seq_len, model_dim)`,
-        attention_weights: multi-head attention coefficients
     """
 
     def __init__(self, num_heads, model_dim, dropout_prob=0.1):
@@ -81,9 +79,7 @@ class MultiHeadAttention(tf.Module):
             mask: optional mask tensor of shape `(batch_size, seq_len, seq_len)`
 
         Returns:
-            A tuple of two tensors:
-                output: output tensor of shape `(batch_size, num_heads, seq_len, depth)`
-                attention_weights: attention weights tensor of shape `(batch_size, num_heads, seq_len, seq_len)`
+            output: output tensor of shape `(batch_size, num_heads, seq_len, depth)`
         """
         # matmul q and k while transposing k: (batch_size, num_heads, seq_len, seq_len)
         matmul_qk = tf.einsum(
@@ -105,16 +101,10 @@ class MultiHeadAttention(tf.Module):
             v,
         )
 
-        return output, attention_weights
+        return output
 
-    def __call__(self, query, value, key=None, use_causal_mask=False):
+    def __call__(self, query, value, key=None, mask=None):
         key = value if key is None else key
-
-        if use_causal_mask:
-            # create a lower triangular mask of shape (batch_size, seq_len, seq_len)
-            mask = tf.linalg.band_part(
-                tf.ones((query.shape[0], query.shape[1], query.shape[1])), -1, 0
-            )
 
         query = self.wq(query)
         key = self.wk(key)
@@ -124,9 +114,7 @@ class MultiHeadAttention(tf.Module):
         key = self._split_heads(key)
         value = self._split_heads(value)
 
-        scaled_attention, attention_weights = self._scaled_dot_product_attention(
-            query, key, value, mask
-        )
+        scaled_attention = self._scaled_dot_product_attention(query, key, value, mask)
 
         scaled_attention = einops.rearrange(
             scaled_attention, "batch heads seq depth -> batch seq (heads depth)"
@@ -134,4 +122,4 @@ class MultiHeadAttention(tf.Module):
 
         output = self.wo(scaled_attention)
 
-        return output, attention_weights
+        return output
