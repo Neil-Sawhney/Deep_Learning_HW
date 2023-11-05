@@ -1,4 +1,6 @@
 import tensorflow as tf
+
+import helpers.embed_text as embed_text
 import modules.mlp as mlp
 
 
@@ -15,21 +17,10 @@ class EmbedClassifier(tf.Module):
     ):
         rng = tf.random.get_global_generator()
 
-        self.num_embedding = num_embedding
-        self.embedding_depth = embedding_depth
-        self.num_word_to_tokenize = num_word_to_tokenize
-
-        stddev = tf.sqrt(2 / (self.num_embedding * self.embedding_depth))
-        self.embedding = tf.Variable(
-            rng.normal(
-                shape=[
-                    self.num_embedding,
-                    self.embedding_depth,
-                ],
-                stddev=stddev,
-            ),
-            trainable=True,
-            name="EmbedClassifier/embedding",
+        self.embed_text = embed_text.EmbedText(
+            num_embedding,
+            embedding_depth,
+            num_word_to_tokenize,
         )
 
         self.mlp = mlp.MLP(
@@ -43,36 +34,15 @@ class EmbedClassifier(tf.Module):
         )
 
     def __call__(self, text: tf.Tensor):
-        """Converts tokens to a flattened list of all embeddings
+        """Applies the embedding and MLP to the text.
 
         Args:
             text (tf.Tensor): The text to tokenize.
             Shape should be [batch_size, num_word_to_tokenize]
 
         Returns:
-            tf.Tensor: The embeddings of the tokens.
-            Shape should be [batch_size, num_word_to_tokenize * embedding_depth]
+            tf.Tensor: The logits of the classes.
+            Shape should be [batch_size, num_classes]
         """
-        tokens = tf.strings.split(text, sep=" ")
-
-        tokens = tokens[:, : self.num_word_to_tokenize]
-
-        tokens = tokens.to_tensor(default_value="")
-
-        if tokens.shape[1] < self.num_word_to_tokenize:
-            tokens = tf.pad(
-                tokens,
-                [
-                    [0, 0],
-                    [0, self.num_word_to_tokenize - tokens.shape[1]],
-                ],
-            )
-
-        hashed_tokens = tf.strings.to_hash_bucket_fast(tokens, self.num_embedding)
-
-        embeddings = tf.nn.embedding_lookup(self.embedding, hashed_tokens)
-        embeddings = tf.reshape(
-            embeddings, [-1, self.num_word_to_tokenize * self.embedding_depth]
-        )
-
+        embeddings = self.embed_text(text)
         return self.mlp(embeddings)

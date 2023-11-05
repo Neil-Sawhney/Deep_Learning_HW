@@ -2,18 +2,6 @@ import pytest
 import tensorflow as tf
 
 
-def test_EmbedClassifier_init():
-    from modules.embed_classifier import EmbedClassifier
-
-    embed_classifier = EmbedClassifier(100, 50, 20, 0.5, 3, 30, 10)
-
-    assert embed_classifier.num_embedding == 100
-    assert embed_classifier.embedding_depth == 50
-    assert embed_classifier.num_word_to_tokenize == 20
-    assert embed_classifier.embedding.shape == (100, 50)
-    assert embed_classifier.mlp is not None
-
-
 @pytest.mark.parametrize(
     "text",
     [
