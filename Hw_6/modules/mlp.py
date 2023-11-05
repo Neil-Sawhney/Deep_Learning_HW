@@ -8,8 +8,8 @@ class MLP(tf.Module):
         self,
         num_inputs,
         num_outputs,
-        num_hidden_layers,
-        hidden_layer_width,
+        num_hidden_layers=0,
+        hidden_layer_width=0,
         hidden_activation=tf.identity,
         output_activation=tf.identity,
         dropout_prob=0,
@@ -21,7 +21,11 @@ class MLP(tf.Module):
         self.hidden_layer_width = hidden_layer_width
         self.hidden_activation = hidden_activation
         self.output_activation = output_activation
-        self.hidden_linear = Linear(self.hidden_layer_width, self.hidden_layer_width)
+        self.hidden_linear = (
+            Linear(self.hidden_layer_width, self.hidden_layer_width)
+            if self.num_hidden_layers > 0
+            else None
+        )
         self.first_linear = Linear(num_inputs, hidden_layer_width)
         self.final_linear = Linear(
             self.hidden_layer_width, self.num_outputs, zero_init=zero_init

@@ -39,10 +39,10 @@ class MultiHeadAttention(tf.Module):
         attention_weights: multi-head attention coefficients
     """
 
-    def __init__(self, num_heads, model_dim, dropout=0.1):
+    def __init__(self, num_heads, model_dim, dropout_prob=0.1):
         self.num_heads = num_heads
         self.model_dim = model_dim
-        self.dropout = dropout
+        self.dropout_prob = dropout_prob
 
         assert model_dim % num_heads == 0
 

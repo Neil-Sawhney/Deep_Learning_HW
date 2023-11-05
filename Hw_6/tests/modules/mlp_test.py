@@ -164,5 +164,37 @@ def test_trainable():
     assert len(grads) == len(mlp.trainable_variables)
 
 
+def test_no_hidden_layers():
+    import tensorflow as tf
+
+    from modules.mlp import MLP
+
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(2384230948)
+
+    num_inputs = 10
+    num_outputs = 1
+    relu = tf.nn.relu
+    sigmoid = tf.nn.sigmoid
+
+    mlp = MLP(
+        num_inputs, num_outputs, hidden_activation=relu, output_activation=sigmoid
+    )
+
+    a = rng.normal(shape=[1, num_inputs])
+    b = rng.normal(shape=[1, num_inputs])
+
+    case1 = mlp(a + b)
+    case2 = mlp(a) + mlp(b)
+
+    tol = 2.22e-15 + 2.22e-15 * tf.abs(case2)
+
+    tf.debugging.Assert(
+        tf.reduce_any(tf.greater(tf.abs(case1 - case2), tol)),
+        [case1, case2],
+        summarize=2,
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
