@@ -178,38 +178,36 @@ def test_accuracy(classifier, test_images, test_labels):
 
 def train(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
-        config_path = Path("configs/classify_agnews_config.yaml")
+        config_path = Path("configs/predict_who_bites_who.yaml")
 
     config = yaml.safe_load(config_path.read_text())
-    num_iters = config["learning"]["num_iters"]
-    weight_decay = config["learning"]["weight_decay"]
-    dropout_prob = config["learning"]["dropout_prob"]
+    refresh_rate = config["display"]["refresh_rate"]
+    val_check_rate = config["learning"]["val_check_rate"]
     batch_size = config["learning"]["batch_size"]
     learning_patience = config["learning"]["learning_patience"]
     learning_rates = config["learning"]["learning_rates"]
+    num_iters = config["learning"]["num_iters"]
+    weight_decay = config["learning"]["weight_decay"]
     num_embeddings = config["learning"]["num_embeddings"]
     embedding_depth = config["learning"]["embedding_depth"]
-    val_check_rate = config["learning"]["val_check_rate"]
-
-    refresh_rate = config["display"]["refresh_rate"]
-
-    num_hidden_layers = config["mlp"]["num_hidden_layers"]
-    hidden_layer_width = config["mlp"]["hidden_layer_width"]
-
     num_word_to_tokenize = config["data"]["num_words_to_tokenize"]
+    num_heads = config["transformer"]["num_heads"]
+    model_dim = config["transformer"]["model_dim"]
+    ffn_dim = config["transformer"]["ffn_dim"]
+    num_blocks = config["transformer"]["num_blocks"]
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    dataset = load_dataset("ag_news")
-    train_and_val_labels = dataset["train"]["label"]
-    train_and_val_text = dataset["train"]["text"]
+    # TODO: remove
+    # dataset = load_dataset("ag_news")
+    # train_and_val_labels = dataset["train"]["label"]
+    # train_and_val_text = dataset["train"]["text"]
 
-    # use 10,000 training samples for validation
-    train_labels = train_and_val_labels[:-10000]
-    train_text = tf.convert_to_tensor(train_and_val_text[:-10000])
-    val_labels = train_and_val_labels[-10000:]
-    val_text = train_and_val_text[-10000:]
+    # train_labels = train_and_val_labels[:-10000]
+    # train_text = tf.convert_to_tensor(train_and_val_text[:-10000])
+    # val_labels = train_and_val_labels[-10000:]
+    # val_text = train_and_val_text[-10000:]
 
     minimum_val_step_num = 0
     current_val_loss = 0
@@ -217,16 +215,17 @@ def train(config_path: Path, use_last_checkpoint: bool):
     current_val_loss = -1
     current_validation_accuracy = -1
 
-    num_classes = 4
-    embed_classifier = EmbedClassifier(
-        num_embeddings,
-        embedding_depth,
-        num_word_to_tokenize,
-        dropout_prob,
-        num_hidden_layers,
-        hidden_layer_width,
-        num_classes,
-    )
+    # TODO: remove
+    # num_classes = 4
+    # embed_classifier = EmbedClassifier(
+    #     num_embeddings,
+    #     embedding_depth,
+    #     num_word_to_tokenize,
+    #     dropout_prob,
+    #     num_hidden_layers,
+    #     hidden_layer_width,
+    #     num_classes,
+    # )
 
     # Used For Plotting
     y_train_batch_accuracy = np.array([])
@@ -249,7 +248,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     checkpoint = tf.train.Checkpoint(embed_classifier)
     checkpoint_manager = tf.train.CheckpointManager(
-        checkpoint, "temp/checkpoints/classify_agnews", max_to_keep=1
+        checkpoint, "temp/checkpoints/predict_who_bites_who", max_to_keep=1
     )
     if use_last_checkpoint:
         print("\n\nRestoring from last checkpoint")
@@ -415,30 +414,35 @@ def train(config_path: Path, use_last_checkpoint: bool):
     print(f"Stop Iteration => {i}")
 
     fig.suptitle(
-        "Classify AGNews: Final Val Accuracy = " + f"{current_validation_accuracy:0.4f}"
+        "Predict Who Bites Who: Final Val Accuracy = "
+        + f"{current_validation_accuracy:0.4f}"
     )
 
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     file_index = 0
-    while Path(f"artifacts/agnews/classify_agnews_img_{file_index}.png").exists():
+    while Path(
+        f"artifacts/who_bites_who/predict_who_bites_who_img_{file_index}.png"
+    ).exists():
         file_index += 1
-    fig.savefig(f"artifacts/agnews/classify_agnews_img_{file_index}.png")
+    fig.savefig(f"artifacts/who_bites_who/predict_who_bites_who_img_{file_index}.png")
 
     # Save the config file as a yaml under the same name as the image
-    config_path = Path(f"artifacts/agnews/classify_agnews_img_{file_index}.yaml")
+    config_path = Path(
+        f"artifacts/who_bites_who/predict_who_bites_who_img_{file_index}.yaml"
+    )
     config_path.write_text(yaml.dump(config))
 
     # save the model
-    checkpoint_manager.directory = "artifacts/agnews/model"
+    checkpoint_manager.directory = "artifacts/who_bites_who/model"
     checkpoint_manager.save()
-    config_path = Path(f"artifacts/agnews/model.yaml")
+    config_path = Path(f"artifacts/who_bites_who/model.yaml")
     config_path.write_text(yaml.dump(config))
 
 
 def test(model_path: Path):
     if model_path is None:
-        model_path = Path("artifacts/agnews/model")
+        model_path = Path("artifacts/who_bites_who/model")
 
     if not model_path.exists():
         print("Model does not exist, run the train script first")

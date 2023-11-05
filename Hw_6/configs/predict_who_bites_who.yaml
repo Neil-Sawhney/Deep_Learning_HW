@@ -14,7 +14,7 @@ learning:
   num_embeddings: 5000
   embedding_depth: 5000 
 data:
-  num_words_to_tokenize: 50
+  num_words_to_tokenize: 3
 transformer:
   num_heads: 8
   model_dim: 512

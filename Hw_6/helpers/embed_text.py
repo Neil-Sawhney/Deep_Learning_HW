@@ -53,7 +53,7 @@ class EmbedText(tf.Module):
             tf.Tensor: The embeddings of the tokens.
             Shape should be [batch_size, num_word_to_tokenize * embedding_depth]
         """
-        tokens = tf.strings.split(text, sep=" ")
+        tokens = tf.strings.regex_split(text, pattern="\s")
 
         tokens = tokens[:, : self.num_word_to_tokenize]
 
