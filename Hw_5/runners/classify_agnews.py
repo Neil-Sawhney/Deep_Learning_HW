@@ -425,6 +425,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     # save the model
     checkpoint_manager.directory = "artifacts/agnews/model"
+    ch
     checkpoint_manager.save()
     config_path = Path(f"artifacts/agnews/model.yaml")
     config_path.write_text(yaml.dump(config))

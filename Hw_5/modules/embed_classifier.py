@@ -71,8 +71,9 @@ class EmbedClassifier(tf.Module):
         hashed_tokens = tf.strings.to_hash_bucket_fast(tokens, self.num_embedding)
 
         embeddings = tf.nn.embedding_lookup(self.embedding, hashed_tokens)
+        num_tokenized_words = tokens.shape[1]
         embeddings = tf.reshape(
-            embeddings, [-1, self.num_word_to_tokenize * self.embedding_depth]
+            embeddings, [-1, num_tokenized_words * self.embedding_depth]
         )
 
         return self.mlp(embeddings)

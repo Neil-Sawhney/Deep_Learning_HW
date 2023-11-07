@@ -2,7 +2,9 @@ import idx2numpy
 import tensorflow as tf
 
 
-def load_idx_data(filename: str,):
+def load_idx_data(
+    filename: str,
+):
     """Uses idx2numpy to load an idx file into a tensor
 
     Args:

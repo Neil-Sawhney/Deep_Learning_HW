@@ -199,6 +199,10 @@ def train(config_path: Path, use_last_checkpoint: bool):
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
 
+    # Load the entire text file as a single string
+    with open("data/who_bites_who.txt") as f:
+        text = f.read()
+
     # TODO: remove
     # dataset = load_dataset("ag_news")
     # train_and_val_labels = dataset["train"]["label"]
