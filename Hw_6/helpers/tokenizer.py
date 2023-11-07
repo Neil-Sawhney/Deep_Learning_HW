@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class Tokenizer:
+class Tokenizer(tf.Module):
     def __init__(self, num_word_to_tokenize):
         self.num_word_to_tokenize = num_word_to_tokenize
 

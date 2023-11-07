@@ -148,25 +148,31 @@ def test_accuracy(classifier, test_images, test_labels):
         test_batch_images = tf.gather(test_images, batch_indices)
         test_batch_labels = tf.gather(test_labels, batch_indices)
         if i == 0:
-            test_accuracy = tf.reduce_mean(
-                tf.cast(
-                    tf.equal(
-                        classifier(test_batch_images).numpy().argmax(axis=1),
-                        test_batch_labels.numpy().reshape(-1),
-                    ),
-                    tf.float32,
+            test_accuracy = (
+                tf.reduce_mean(
+                    tf.cast(
+                        tf.equal(
+                            classifier(test_batch_images).numpy().argmax(axis=1),
+                            test_batch_labels.numpy().reshape(-1),
+                        ),
+                        tf.float32,
+                    )
                 )
-            ) / 100
+                / 100
+            )
         else:
-            test_accuracy += tf.reduce_mean(
-                tf.cast(
-                    tf.equal(
-                        classifier(test_batch_images).numpy().argmax(axis=1),
-                        test_batch_labels.numpy().reshape(-1),
-                    ),
-                    tf.float32,
+            test_accuracy += (
+                tf.reduce_mean(
+                    tf.cast(
+                        tf.equal(
+                            classifier(test_batch_images).numpy().argmax(axis=1),
+                            test_batch_labels.numpy().reshape(-1),
+                        ),
+                        tf.float32,
+                    )
                 )
-            ) / 100
+                / 100
+            )
     return test_accuracy.numpy()
 
 
@@ -425,7 +431,6 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     # save the model
     checkpoint_manager.directory = "artifacts/agnews/model"
-    ch
     checkpoint_manager.save()
     config_path = Path(f"artifacts/agnews/model.yaml")
     config_path.write_text(yaml.dump(config))
@@ -435,7 +440,7 @@ def test(model_path: Path):
     if model_path is None:
         model_path = Path("artifacts/agnews/model")
 
-    if (not model_path.exists()):
+    if not model_path.exists():
         print("Model does not exist, run the train script first")
         return
 

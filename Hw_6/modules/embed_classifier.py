@@ -16,8 +16,8 @@ class EmbedClassifier(tf.Module):
         hidden_layer_width,
         num_classes,
     ):
-        self.embedder = Embedder(num_embedding, embedding_depth)
         self.tokenizer = Tokenizer(num_word_to_tokenize)
+        self.embedder = Embedder(num_embedding, embedding_depth)
 
         self.mlp = MLP(
             num_word_to_tokenize * embedding_depth,
@@ -34,7 +34,7 @@ class EmbedClassifier(tf.Module):
 
         Args:
             text (tf.Tensor): The text to tokenize.
-            Shape should be [batch_size, num_word_to_tokenize]
+            Shape should be [batch_size]
 
         Returns:
             tf.Tensor: The logits of the classes.

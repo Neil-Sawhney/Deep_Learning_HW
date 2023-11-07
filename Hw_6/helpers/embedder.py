@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class Embedder:
+class Embedder(tf.Module):
     def __init__(self, num_embedding, embedding_depth):
         rng = tf.random.get_global_generator()
 
@@ -17,7 +17,7 @@ class Embedder:
                 stddev=stddev,
             ),
             trainable=True,
-            name="EmbedText/embedding",
+            name="Embedder/embedding",
         )
 
     def __call__(self, tokens):
