@@ -430,21 +430,20 @@ def train(config_path: Path, use_last_checkpoint: bool):
     config_path.write_text(yaml.dump(config))
 
     # save the model
-    checkpoint_manager.directory = "artifacts/agnews/model"
     checkpoint_manager.save()
     config_path = Path(f"artifacts/agnews/model.yaml")
     config_path.write_text(yaml.dump(config))
 
 
-def test(model_path: Path):
-    if model_path is None:
-        model_path = Path("artifacts/agnews/model")
+def test(checkpoint_path: Path):
+    if checkpoint_path is None:
+        checkpoint_path = Path("temp/checkpoints/classify_agnews")
 
-    if not model_path.exists():
-        print("Model does not exist, run the train script first")
+    if not checkpoint_path.exists():
+        print("Checkpoint does not exist, run the train script first")
         return
 
-    config_path = Path("artifacts/agnews/model/model.yaml")
+    config_path = Path("artifacts/agnews/model.yaml")
 
     config = yaml.safe_load(config_path.read_text())
     dropout_prob = config["learning"]["dropout_prob"]
@@ -468,7 +467,7 @@ def test(model_path: Path):
     )
 
     checkpoint = tf.train.Checkpoint(embed_classifier)
-    checkpoint.restore(tf.train.latest_checkpoint(model_path))
+    checkpoint.restore(tf.train.latest_checkpoint(checkpoint_path))
 
     dataset = load_dataset("ag_news")
     test_labels = dataset["test"]["label"]
@@ -480,7 +479,3 @@ def test(model_path: Path):
     test_accuracy_value = test_accuracy(embed_classifier, test_text, test_labels)
 
     print(f"Test Accuracy => {test_accuracy_value:0.4f}")
-
-    file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
-    file.write(f"{test_accuracy_value:0.4f}")
-    file.close()
