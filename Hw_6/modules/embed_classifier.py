@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from helpers.embedder import Embedder
-from helpers.tokenizer import Tokenizer
+from helpers.tokenizer import tokenizer
 from modules.mlp import MLP
 
 
@@ -10,17 +10,16 @@ class EmbedClassifier(tf.Module):
         self,
         num_embedding,
         embedding_depth,
-        num_word_to_tokenize,
+        context_length,
         dropout_prob,
         num_hidden_layers,
         hidden_layer_width,
         num_classes,
     ):
-        self.tokenizer = Tokenizer(num_word_to_tokenize)
-        self.embedder = Embedder(num_embedding, embedding_depth)
+        self.embedder = Embedder(num_embedding, embedding_depth, context_length)
 
         self.mlp = MLP(
-            num_word_to_tokenize * embedding_depth,
+            context_length * embedding_depth,
             num_classes,
             num_hidden_layers,
             hidden_layer_width,
@@ -41,7 +40,7 @@ class EmbedClassifier(tf.Module):
             Shape should be [batch_size, num_classes]
         """
 
-        tokens = self.tokenizer(text)
+        tokens = tokenizer(text)
         embeddings = self.embedder(tokens)
 
         return self.mlp(embeddings)

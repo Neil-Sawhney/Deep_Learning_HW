@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from helpers.embed_text import EmbedText
+from helpers.embedder import Embedder
 from helpers.positional_encoding import PositionalEncoding
 from modules.linear import Linear
 from modules.transformer_decoder_block import TransformerDecoderBlock
@@ -31,20 +31,15 @@ class TransformerDecoder(tf.Module):
         self,
         num_embedding,
         embedding_depth,
-        num_word_to_tokenize,
+        context_length,
         num_heads,
         model_dim,
         ffn_dim,
         num_blocks,
         dropout_prob=0.1,
     ):
-        self.embed_text = EmbedText(
-            num_embedding,
-            embedding_depth,
-            num_word_to_tokenize,
-        )
-
-        self.positional_encoding = PositionalEncoding(num_word_to_tokenize, model_dim)
+        self.embedder = Embedder(num_embedding, embedding_depth, context_length)
+        self.positional_encoding = PositionalEncoding(context_length, model_dim)
 
         self.layers = [
             TransformerDecoderBlock(num_heads, model_dim, ffn_dim, dropout_prob)
@@ -53,11 +48,8 @@ class TransformerDecoder(tf.Module):
 
         self.linear = Linear(model_dim, num_embedding)
 
-    def __call__(self, input, mask=False, training=False):
-        embeddings = self.embed_text(input)
-        embeddings = self.positional_encoding(embeddings)
-
+    def __call__(self, input_embedding, mask=False, training=False):
         for layer in self.layers:
-            embeddings = layer(embeddings, mask, training)
+            embedding = layer(input_embedding, mask, training)
 
-        return self.linear(embeddings)
+        return self.linear(embedding)

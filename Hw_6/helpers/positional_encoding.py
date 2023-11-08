@@ -22,6 +22,7 @@ class PositionalEncoding(tf.Module):
         output: The result of the computation, of shape `(B, seq_len, model_dim)`,
     """
 
+    # FIXME: this whole thing is a mess
     def __init__(self, max_position, model_dim):
         super(PositionalEncoding, self).__init__()
         self.positional_encoding = self._calculate_positional_encoding(
