@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import einops
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -10,8 +9,7 @@ from datasets import load_dataset
 
 from helpers.adam import Adam
 from helpers.embedder import Embedder
-from helpers.positional_encoding import PositionalEncoding
-from helpers.tokenizer import tokenizer
+from helpers.tokenizer import Tokenizer
 from modules.transformer_decoder import TransformerDecoder
 
 
@@ -56,21 +54,12 @@ def train(config_path: Path, use_last_checkpoint: bool):
     with open("data/who_bites_who.txt", "r", encoding="utf-8") as f:
         one_big_slab_of_text = f.read()
 
-    one_big_slab_of_text = tf.expand_dims(one_big_slab_of_text, axis=0)
-    tokenized_text = tokenizer(one_big_slab_of_text, tf.shape(one_big_slab_of_text)[1])
-    # Split into sequences of length context_length . The last sequence will be shorter than context_length
-    text = einops.rearrange(
-        tokenized_text,
-        "batch (seq_len context_length) -> (batch seq_len) context_length",
-        context_length=context_length,
-    )
+    tokenizer = Tokenizer(context_length, False)
+    tokenized_text = tokenizer(one_big_slab_of_text)
 
-    embedder = Embedder(num_embeddings, embedding_depth, context_length)
-    positional_encoding = PositionalEncoding(context_length, model_dim)
-
+    embedder = Embedder(num_embeddings, embedding_depth)
+    # TODO: add positional encoding later
     input_embedding = embedder(tokenized_text)
-    # TODO: add back the positional encoding once you unfuck it
-    # input_embedding = positional_encoding(input_embedding)
 
     transformer_decoder = TransformerDecoder(
         num_embeddings,
@@ -371,6 +360,7 @@ def test(model_path: Path):
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
     file.write(f"{test_accuracy_value:0.4f}")
+    file.close()
     file.close()
     file.close()
     file.close()
