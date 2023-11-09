@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import einops
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -49,33 +50,37 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
-    # CLEANUP: put this back in once we know that everythin is working
-    # tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
+    tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    # TODO: seperate stuff into fumnctions
-    # TODO: padding mask and causal mask, using the embedder, adding start and end tokens, doing a left shift to make the target and source text, positional encoding
-    # TODO: Return input_embedding, targets, mask
-    # input_embedding, targets, mask = preprocess_text("data/who_bites_who.txt")
+    # TODO: padding mask and causal mask, using the embedder, positional encoding
     with open("data/who_bites_who.txt", "r", encoding="utf-8") as f:
-        text = f.read()
+        one_big_slab_of_text = f.read()
 
-    text = tf.expand_dims(text, 0)
+    one_big_slab_of_text = tf.expand_dims(one_big_slab_of_text, axis=0)
+    tokenized_text = tokenizer(one_big_slab_of_text, tf.shape(one_big_slab_of_text)[1])
+    # Split into sequences of length context_length . The last sequence will be shorter than context_length
+    text = einops.rearrange(
+        tokenized_text,
+        "batch (seq_len context_length) -> (batch seq_len) context_length",
+        context_length=context_length,
+    )
 
     embedder = Embedder(num_embeddings, embedding_depth, context_length)
     positional_encoding = PositionalEncoding(context_length, model_dim)
-    tokenized_text = tokenizer(text)
-    input_embedding = embedder(tokenized_text)
-    input_embedding = positional_encoding(input_embedding)
 
-    # transformer_decoder = TransformerDecoder(
-    #     num_embeddings,
-    #     embedding_depth,
-    #     num_word_to_tokenize,
-    #     num_heads,
-    #     model_dim,
-    #     ffn_dim,
-    #     num_blocks,
-    # )
+    input_embedding = embedder(tokenized_text)
+    # TODO: add back the positional encoding once you unfuck it
+    # input_embedding = positional_encoding(input_embedding)
+
+    transformer_decoder = TransformerDecoder(
+        num_embeddings,
+        embedding_depth,
+        context_length,
+        num_heads,
+        model_dim,
+        ffn_dim,
+        num_blocks,
+    )
 
     # # CLEANUP: remove
     # # dataset = load_dataset("ag_news")
@@ -87,7 +92,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # # val_labels = train_and_val_labels[-10000:]
     # # val_text = train_and_val_text[-10000:]
 
-    # used_patience = 0
+    used_patience = 0
 
     # # CLEANUP: remove
     # # num_classes = 4
@@ -101,45 +106,48 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # #     num_classes,
     # # )
 
-    # # Used For Plotting
-    # y_train_batch_accuracy = np.array([])
-    # y_train_batch_loss = np.array([])
-    # x_train_loss_iterations = np.array([])
-    # x_train_accuracy_iterations = np.array([])
+    # Used For Plotting
+    y_train_batch_accuracy = np.array([])
+    y_train_batch_loss = np.array([])
+    x_train_loss_iterations = np.array([])
+    x_train_accuracy_iterations = np.array([])
 
-    # learning_rate_change_steps = np.array([])
+    learning_rate_index = 0  # Index of the current learning rate, used to change the learning rate # when the train batch loss stops improving
+    learning_rate_change_steps = np.array([])
+    adam = Adam(
+        learning_rates[learning_rate_index],
+        weight_decay=weight_decay,
+    )
 
-    # # Index of the current learning rate, used to change the learning rate
-    # # when the train batch loss stops improving
-    # learning_rate_index = 0
-    # adam = Adam(
-    #     learning_rates[learning_rate_index],
-    #     weight_decay=weight_decay,
-    # )
+    checkpoint = tf.train.Checkpoint(transformer_decoder)
+    checkpoint_manager = tf.train.CheckpointManager(
+        checkpoint, "temp/checkpoints/predict_who_bites_who", max_to_keep=1
+    )
+    if use_last_checkpoint:
+        print("\n\nRestoring from last checkpoint")
+        checkpoint_manager.restore_or_initialize()
 
-    # checkpoint = tf.train.Checkpoint(transformer_decoder)
-    # checkpoint_manager = tf.train.CheckpointManager(
-    #     checkpoint, "temp/checkpoints/predict_who_bites_who", max_to_keep=1
-    # )
-    # if use_last_checkpoint:
-    #     print("\n\nRestoring from last checkpoint")
-    #     checkpoint_manager.restore_or_initialize()
+    overall_log = tqdm.tqdm(total=0, position=1, bar_format="{desc}")
+    train_log = tqdm.tqdm(total=0, position=2, bar_format="{desc}")
+    bar = tqdm.trange(num_iters, position=3)
 
-    # overall_log = tqdm.tqdm(total=0, position=1, bar_format="{desc}")
-    # train_log = tqdm.tqdm(total=0, position=2, bar_format="{desc}")
-    # bar = tqdm.trange(num_iters, position=3)
+    num_of_parameters = tf.math.add_n(
+        [
+            tf.math.reduce_prod(var.shape)
+            for var in transformer_decoder.trainable_variables
+        ]
+    )
+    print(f"\nNumber of Parameters => {num_of_parameters}")
 
-    # num_of_parameters = tf.math.add_n(
-    #     [
-    #         tf.math.reduce_prod(var.shape)
-    #         for var in transformer_decoder.trainable_variables
-    #     ]
-    # )
-    # print(f"\nNumber of Parameters => {num_of_parameters}")
+    for i in bar:
+        batch_indices = rng.uniform(
+            shape=[batch_size], maxval=train_text.shape[0], dtype=tf.int32
+        )
+        # TODO: split each entry of size context length in the batch dimension into random sequences of all lengths <= (context_length - 1). The target is the next token in the sequence.
+        window_start_index = tf.random.uniform(
+            shape=(), maxval=text.shape[1] - context_length, dtype=tf.int32
+        )
 
-    # for i in bar:
-    #     # TODO: for batching instead of random indices we want random sequences of length <= num_words_to_tokenize - 1.
-    #     batch_indices =
     #     with tf.GradientTape() as tape:
     #         input_embedding_batch = tf.gather(train_text, batch_indices)
     #         targets_batch = tf.gather(train_labels, batch_indices)
@@ -363,5 +371,8 @@ def test(model_path: Path):
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
     file.write(f"{test_accuracy_value:0.4f}")
+    file.close()
+    file.close()
+    file.close()
     file.close()
     file.close()

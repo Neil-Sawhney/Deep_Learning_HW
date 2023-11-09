@@ -16,6 +16,7 @@ class EmbedClassifier(tf.Module):
         hidden_layer_width,
         num_classes,
     ):
+        self.context_length = context_length
         self.embedder = Embedder(num_embedding, embedding_depth, context_length)
 
         self.mlp = MLP(
@@ -40,7 +41,7 @@ class EmbedClassifier(tf.Module):
             Shape should be [batch_size, num_classes]
         """
 
-        tokens = tokenizer(text)
+        tokens = tokenizer(text, self.context_length)
         embeddings = self.embedder(tokens)
 
         return self.mlp(embeddings)

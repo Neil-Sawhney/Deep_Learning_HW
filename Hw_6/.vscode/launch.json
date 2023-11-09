@@ -10,7 +10,7 @@
             "type": "python",
             "request": "launch",
             "program": "./train.py",
-            "args": ["./runners/who_bites_who.py"],
+            "args": ["./runners/predict_who_bites_who.py"],
             "console": "integratedTerminal",
             "justMyCode": true
         },
