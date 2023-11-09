@@ -57,9 +57,9 @@ def train(config_path: Path, use_last_checkpoint: bool):
     tokenizer = Tokenizer(context_length, False)
     tokenized_text = tokenizer(one_big_slab_of_text)
 
-    embedder = Embedder(num_embeddings, embedding_depth)
-    # TODO: add positional encoding later
-    input_embedding = embedder(tokenized_text)
+    # Generate the targets by shifting the tokenized text by one
+    targets = tokenized_text[:, 1:]
+    tokenized_text = tokenized_text[:, :-1]
 
     transformer_decoder = TransformerDecoder(
         num_embeddings,
@@ -71,29 +71,10 @@ def train(config_path: Path, use_last_checkpoint: bool):
         num_blocks,
     )
 
-    # # CLEANUP: remove
-    # # dataset = load_dataset("ag_news")
-    # # train_and_val_labels = dataset["train"]["label"]
-    # # train_and_val_text = dataset["train"]["text"]
-    # #
-    # # train_labels = train_and_val_labels[:-10000]
-    # # train_text = tf.convert_to_tensor(train_and_val_text[:-10000])
-    # # val_labels = train_and_val_labels[-10000:]
-    # # val_text = train_and_val_text[-10000:]
-
     used_patience = 0
 
     # # CLEANUP: remove
     # # num_classes = 4
-    # # embed_classifier = EmbedClassifier(
-    # #     num_embeddings,
-    # #     embedding_depth,
-    # #     num_word_to_tokenize,
-    # #     dropout_prob,
-    # #     num_hidden_layers,
-    # #     hidden_layer_width,
-    # #     num_classes,
-    # # )
 
     # Used For Plotting
     y_train_batch_accuracy = np.array([])
@@ -130,23 +111,19 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     for i in bar:
         batch_indices = rng.uniform(
-            shape=[batch_size], maxval=train_text.shape[0], dtype=tf.int32
-        )
-        # TODO: split each entry of size context length in the batch dimension into random sequences of all lengths <= (context_length - 1). The target is the next token in the sequence.
-        window_start_index = tf.random.uniform(
-            shape=(), maxval=text.shape[1] - context_length, dtype=tf.int32
+            shape=[batch_size], maxval=tokenized_text.shape[0], dtype=tf.int32
         )
 
-    #     with tf.GradientTape() as tape:
-    #         input_embedding_batch = tf.gather(train_text, batch_indices)
-    #         targets_batch = tf.gather(train_labels, batch_indices)
+        with tf.GradientTape() as tape:
+            input_tokens_batch = tf.gather(tokenized_text, batch_indices)
+            targets_batch = tf.gather(targets, batch_indices)
 
-    #         current_train_batch_loss = tf.reduce_mean(
-    #             tf.nn.sparse_softmax_cross_entropy_with_logits(
-    #                 labels=tf.squeeze(target_batch),
-    #                 logits=TransformerDecoder(text_batch),
-    #             )
-    #         )
+            current_train_batch_loss = tf.reduce_mean(
+                tf.nn.sparse_softmax_cross_entropy_with_logits(
+                    labels=tf.squeeze(targets_batch),
+                    logits=transformer_decoder(input_tokens_batch),
+                )
+            )
 
     #     # Print initial train batch loss
     #     if i == 0:

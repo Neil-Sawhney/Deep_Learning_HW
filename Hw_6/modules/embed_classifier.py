@@ -16,6 +16,8 @@ class EmbedClassifier(tf.Module):
         hidden_layer_width,
         num_classes,
     ):
+        self.num_word_to_tokenize = num_word_to_tokenize
+        self.embedding_depth = embedding_depth
         self.tokenizer = Tokenizer(num_word_to_tokenize)
         self.embedder = Embedder(num_embedding, embedding_depth)
 
@@ -43,5 +45,9 @@ class EmbedClassifier(tf.Module):
 
         tokens = self.tokenizer(text)
         embeddings = self.embedder(tokens)
+
+        embeddings = tf.reshape(
+            embeddings, [-1, self.num_word_to_tokenize * self.embedding_depth]
+        )
 
         return self.mlp(embeddings)

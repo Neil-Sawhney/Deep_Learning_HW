@@ -38,7 +38,7 @@ class TransformerDecoder(tf.Module):
         num_blocks,
         dropout_prob=0.1,
     ):
-        self.embedder = Embedder(num_embedding, embedding_depth, context_length)
+        self.embedder = Embedder(num_embedding, embedding_depth)
         self.positional_encoding = PositionalEncoding(context_length, model_dim)
 
         self.layers = [
@@ -48,8 +48,11 @@ class TransformerDecoder(tf.Module):
 
         self.linear = Linear(model_dim, num_embedding)
 
-    def __call__(self, input_embedding, mask=False, training=False):
+    def __call__(self, input_tokens, mask=False, training=False):
+        input_embeddings = self.embedder(input_tokens)
+        # TODO: uncomment this when it works
+        # input_embedding = self.positional_encoding(input_embeddings)
         for layer in self.layers:
-            embedding = layer(input_embedding, mask, training)
+            embedding = layer(input_embeddings, mask, training)
 
         return self.linear(embedding)
