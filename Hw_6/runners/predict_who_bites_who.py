@@ -54,14 +54,15 @@ def train(config_path: Path, use_last_checkpoint: bool):
     tokenizer = Tokenizer(context_length, False)
     tokenized_text = tokenizer(one_big_slab_of_text)
 
-    # Generate the targets by shifting the tokenized text by one
-    targets = tokenized_text[:, 1:]
-    # TODO: if below works, modify the tokenizer
-    from helpers.embedder import Embedder
-
-    embedder = Embedder(min_vocab_size, model_dim)
-    targets = embedder(targets)
-
+    # add the start token
+    targets = tokenized_text
+    tokenized_text = tf.concat(
+        [
+            tf.fill([tokenized_text.shape[0], 1], b"<START>"),
+            tokenized_text,
+        ],
+        axis=1,
+    )
     tokenized_text = tokenized_text[:, :-1]
 
     transformer_decoder = TransformerDecoder(
