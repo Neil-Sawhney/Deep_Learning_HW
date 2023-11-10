@@ -29,7 +29,7 @@ class Embedder(tf.Module):
 
         Returns:
             tf.Tensor: The embeddings of the tokens.
-            Shape should be [batch_size, num_word_to_tokenize * embedding_depth]
+            Shape should be [batch_size, num_tokenized_words, embedding_depth]
         """
         hashed_tokens = tf.strings.to_hash_bucket_fast(tokens, self.embedding_buckets)
 

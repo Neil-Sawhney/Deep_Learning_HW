@@ -1,7 +1,7 @@
 display:
   refresh_rate: 5
 learning:
-  batch_size: 100
+  batch_size: 5
   learning_patience: 20 
   learning_rates:
   - 0.0005

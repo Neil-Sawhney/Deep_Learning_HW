@@ -56,6 +56,8 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     # add the start token
     targets = tokenized_text
+    hashed_targets = tf.strings.to_hash_bucket_fast(targets, min_vocab_size)
+
     tokenized_text = tf.concat(
         [
             tf.fill([tokenized_text.shape[0], 1], b"<START>"),
@@ -119,7 +121,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
         with tf.GradientTape() as tape:
             input_tokens_batch = tf.gather(tokenized_text, batch_indices)
-            targets_batch = tf.gather(targets, batch_indices)
+            targets_batch = tf.gather(hashed_targets, batch_indices)
 
             current_train_batch_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -340,6 +342,7 @@ def test(model_path: Path):
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
     file.write(f"{test_accuracy_value:0.4f}")
+    file.close()
     file.close()
     file.close()
     file.close()

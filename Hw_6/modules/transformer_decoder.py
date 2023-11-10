@@ -45,8 +45,7 @@ class TransformerDecoder(tf.Module):
             for _ in range(num_blocks)
         ]
 
-        # TODO: output might be wrong
-        self.linear = Linear(model_dim, model_dim)
+        self.linear = Linear(model_dim, min_vocab_size)
 
     def __call__(self, input_tokens, mask=False, training=False):
         embeddings = self.embedder(input_tokens)

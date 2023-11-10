@@ -33,17 +33,17 @@ class Tokenizer(tf.Module):
         else:
             # Pad the sequence with <PAD> tokens to make it a multiple of context_length
             num_tokens = tokens.shape[0]
-            remainder = num_tokens % (self.num_word_to_tokenize + 1)
+            remainder = num_tokens % (self.num_word_to_tokenize)
 
             if remainder != 0:
                 tokens = tf.pad(
-                    tokens, [[0, (self.num_word_to_tokenize + 1) - remainder]]
+                    tokens, [[0, (self.num_word_to_tokenize) - remainder]]
                 )
 
             tokens = einops.rearrange(
                 tokens,
                 "(batch context_length) -> batch context_length",
-                context_length=self.num_word_to_tokenize + 1,
+                context_length=self.num_word_to_tokenize,
             )
 
         return tokens
