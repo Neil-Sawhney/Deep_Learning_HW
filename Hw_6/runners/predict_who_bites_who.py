@@ -223,6 +223,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     ax[1].set_ylabel("Accuracy")
 
     print("\n\n\n\n")
+    # FIXME:why is it higher at the end
     print(f"Final Training Loss => {current_train_loss:0.4f}")
     print(f"Stop Iteration => {i}")
 
