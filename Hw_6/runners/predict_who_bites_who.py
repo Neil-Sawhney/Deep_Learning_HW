@@ -8,7 +8,6 @@ import yaml
 from datasets import load_dataset
 
 from helpers.adam import Adam
-from helpers.embedder import Embedder
 from helpers.tokenizer import Tokenizer
 from modules.transformer_decoder import TransformerDecoder
 
@@ -32,15 +31,13 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # HYPERPARAMETERS
     config = yaml.safe_load(config_path.read_text())
     refresh_rate = config["display"]["refresh_rate"]
-    val_check_rate = config["learning"]["val_check_rate"]
     batch_size = config["learning"]["batch_size"]
     learning_patience = config["learning"]["learning_patience"]
     learning_rates = config["learning"]["learning_rates"]
     num_iters = config["learning"]["num_iters"]
     weight_decay = config["learning"]["weight_decay"]
-    num_embeddings = config["learning"]["num_embeddings"]
-    embedding_depth = config["learning"]["embedding_depth"]
     context_length = config["data"]["context_length"]
+    min_vocab_size = config["data"]["min_vocab_size"]
     num_heads = config["transformer"]["num_heads"]
     model_dim = config["transformer"]["model_dim"]
     ffn_dim = config["transformer"]["ffn_dim"]
@@ -59,11 +56,16 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     # Generate the targets by shifting the tokenized text by one
     targets = tokenized_text[:, 1:]
+    # TODO: if below works, modify the tokenizer
+    from helpers.embedder import Embedder
+
+    embedder = Embedder(min_vocab_size, model_dim)
+    targets = embedder(targets)
+
     tokenized_text = tokenized_text[:, :-1]
 
     transformer_decoder = TransformerDecoder(
-        num_embeddings,
-        embedding_depth,
+        min_vocab_size,
         context_length,
         num_heads,
         model_dim,
@@ -73,7 +75,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     used_patience = 0
 
-    # # CLEANUP: remove
+    # CLEANUP: remove
     # # num_classes = 4
 
     # Used For Plotting
@@ -337,6 +339,7 @@ def test(model_path: Path):
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
     file.write(f"{test_accuracy_value:0.4f}")
+    file.close()
     file.close()
     file.close()
     file.close()

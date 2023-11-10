@@ -83,7 +83,7 @@ class MultiHeadAttention(tf.Module):
         """
         # matmul q and k while transposing k: (batch_size, num_heads, seq_len, seq_len)
         matmul_qk = tf.einsum(
-            "batch heads q_seq depth, batch heads k_seq depth -> batch heads q_seq k_seq",
+            "bhqd,bhkd->bhqk",
             q,
             k,
         )
@@ -96,7 +96,7 @@ class MultiHeadAttention(tf.Module):
 
         attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
         output = tf.einsum(
-            "batch heads q_seq k_seq, batch heads v_seq depth -> batch heads q_seq depth",
+            "bhqk,bhvd->bhqd",
             attention_weights,
             v,
         )

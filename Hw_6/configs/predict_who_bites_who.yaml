@@ -1,7 +1,6 @@
 display:
   refresh_rate: 5
 learning:
-  val_check_rate: 10
   batch_size: 100
   learning_patience: 20 
   learning_rates:
@@ -11,10 +10,9 @@ learning:
   - 0.00001
   num_iters: 100000
   weight_decay: 0.2
-  num_embeddings: 5000
-  embedding_depth: 5000 
 data:
   context_length: 50
+  min_vocab_size: 5000
 transformer:
   num_heads: 8
   model_dim: 512

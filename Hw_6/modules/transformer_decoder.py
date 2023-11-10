@@ -29,8 +29,7 @@ class TransformerDecoder(tf.Module):
 
     def __init__(
         self,
-        num_embedding,
-        embedding_depth,
+        min_vocab_size,
         context_length,
         num_heads,
         model_dim,
@@ -38,7 +37,7 @@ class TransformerDecoder(tf.Module):
         num_blocks,
         dropout_prob=0.1,
     ):
-        self.embedder = Embedder(num_embedding, embedding_depth)
+        self.embedder = Embedder(min_vocab_size, model_dim)
         self.positional_encoding = PositionalEncoding(context_length, model_dim)
 
         self.layers = [
@@ -46,13 +45,15 @@ class TransformerDecoder(tf.Module):
             for _ in range(num_blocks)
         ]
 
-        self.linear = Linear(model_dim, num_embedding)
+        # TODO: output might be wrong
+        self.linear = Linear(model_dim, model_dim)
 
     def __call__(self, input_tokens, mask=False, training=False):
-        input_embeddings = self.embedder(input_tokens)
+        embeddings = self.embedder(input_tokens)
         # TODO: uncomment this when it works
         # input_embedding = self.positional_encoding(input_embeddings)
         for layer in self.layers:
-            embedding = layer(input_embeddings, mask, training)
+            embeddings = layer(embeddings, mask, training)
 
-        return self.linear(embedding)
+        output = self.linear(embeddings)
+        return output
