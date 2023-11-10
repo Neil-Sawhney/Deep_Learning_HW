@@ -37,7 +37,9 @@ class Tokenizer(tf.Module):
 
             if remainder != 0:
                 tokens = tf.pad(
-                    tokens, [[0, (self.num_word_to_tokenize) - remainder]]
+                    tokens,
+                    [[0, (self.num_word_to_tokenize) - remainder]],
+                    constant_values=b"<PAD>",
                 )
 
             tokens = einops.rearrange(

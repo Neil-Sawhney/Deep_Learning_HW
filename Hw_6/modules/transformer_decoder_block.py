@@ -37,7 +37,6 @@ class TransformerDecoderBlock(tf.Module):
         # Split the model dimension into 5 groups for group normalization
         self.groupnorm1 = GroupNorm(model_dim // 4, model_dim, 1)
         self.groupnorm2 = GroupNorm(model_dim // 4, model_dim, 1)
-        self.groupnorm3 = GroupNorm(model_dim // 4, model_dim, 1)
 
     def __call__(self, inputs, mask=False, training=False):
         attn = self.mha(inputs, inputs, inputs, mask)
@@ -48,6 +47,6 @@ class TransformerDecoderBlock(tf.Module):
         ffn_output = self.ff(out1)
         if training:
             ffn_output = tf.nn.dropout(ffn_output, rate=self.dropout_prob)
-        out2 = self.groupnorm3(ffn_output + out1)
+        out2 = self.groupnorm2(ffn_output + out1)
 
         return out2
