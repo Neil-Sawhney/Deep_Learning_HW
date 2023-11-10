@@ -49,8 +49,8 @@ class TransformerDecoder(tf.Module):
 
     def __call__(self, input_tokens, mask=False, training=False):
         embeddings = self.embedder(input_tokens)
-        # TODO: uncomment this when it works
-        # input_embedding = self.positional_encoding(input_embeddings)
+        embeddings = self.positional_encoding(embeddings)
+
         for layer in self.layers:
             embeddings = layer(embeddings, mask, training)
 
