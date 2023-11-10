@@ -196,7 +196,14 @@ def train(config_path: Path, use_last_checkpoint: bool):
                 checkpoint_manager.restore_or_initialize()
 
     checkpoint_manager.restore_or_initialize()
-    logits = transformer_decoder(tokenized_text)
+    batch_indices = rng.uniform(
+        shape=[batch_size], maxval=tokenized_text.shape[0], dtype=tf.int32
+    )
+    input_tokens_batch = tf.gather(tokenized_text, batch_indices)
+    targets_batch = tf.gather(hashed_targets, batch_indices)
+
+    labels = targets_batch
+    logits = transformer_decoder(input_tokens_batch)
     final_train_accuracy = train_batch_accuracy(logits, labels)
 
     fig, ax = plt.subplots(2, 1)

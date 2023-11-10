@@ -47,9 +47,13 @@ class TransformerDecoder(tf.Module):
 
         self.linear = Linear(model_dim, min_vocab_size)
 
-    def __call__(self, input_tokens, mask=False, training=False):
+    def __call__(self, input_tokens, mask=False, training=True):
         embeddings = self.embedder(input_tokens)
         embeddings = self.positional_encoding(embeddings)
+
+        mask = tf.linalg.band_part(
+            tf.ones((input_tokens.shape[1], input_tokens.shape[1])), 0, -1
+        )
 
         for layer in self.layers:
             embeddings = layer(embeddings, mask, training)

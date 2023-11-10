@@ -11,8 +11,8 @@ learning:
   num_iters: 100000
   weight_decay: 0.2
 data:
-  context_length: 50
-  min_vocab_size: 5000
+  context_length: 4 
+  min_vocab_size: 100
 transformer:
   num_heads: 8
   model_dim: 512
