@@ -6,6 +6,15 @@
     "configurations": [
 
         {
+            "name": "Debug who_bites_who with checkpoint",
+            "type": "python",
+            "request": "launch",
+            "program": "./train.py",
+            "args": ["./runners/predict_who_bites_who.py", "-r"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Debug who_bites_who",
             "type": "python",
             "request": "launch",

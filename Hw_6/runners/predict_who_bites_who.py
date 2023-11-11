@@ -184,6 +184,16 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     checkpoint_manager.restore_or_initialize()
 
+    # get the vocab file from
+    vocab_file = transformer_decoder.get_vocab_file()
+    with open(vocab_file.name, "r", encoding="utf-8") as file:
+        vocab_file_contents = file.read()
+
+    # save a copy to the artifacts directory
+    vocab_file_copy = Path("artifacts/who_bites_who/model/vocab.txt")
+    with open(vocab_file_copy, "w", encoding="utf-8") as file:
+        file.write(vocab_file_contents)
+
     # delete the temporary directory
     tf.io.gfile.rmtree(temp_dir)
 
@@ -273,18 +283,35 @@ def test(model_path: Path):
         print("Model does not exist, run the train script first")
         return
 
-    config_path = Path("artifacts/agnews/model/model.yaml")
+    config_path = Path("artifacts/who_bites_who/model/model.yaml")
 
     config = yaml.safe_load(config_path.read_text())
-    dropout_prob = config["learning"]["dropout_prob"]
-    num_embeddings = config["learning"]["num_embeddings"]
-    embedding_depth = config["learning"]["embedding_depth"]
+    refresh_rate = config["display"]["refresh_rate"]
+    batch_size = config["learning"]["batch_size"]
+    learning_patience = config["learning"]["learning_patience"]
+    learning_rates = config["learning"]["learning_rates"]
+    num_iters = config["learning"]["num_iters"]
+    weight_decay = config["learning"]["weight_decay"]
+    context_length = config["data"]["context_length"]
+    num_heads = config["transformer"]["num_heads"]
+    model_dim = config["transformer"]["model_dim"]
+    ffn_dim = config["transformer"]["ffn_dim"]
+    num_blocks = config["transformer"]["num_blocks"]
 
-    num_hidden_layers = config["mlp"]["num_hidden_layers"]
-    hidden_layer_width = config["mlp"]["hidden_layer_width"]
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
+    tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    num_word_to_tokenize = config["data"]["num_words_to_tokenize"]
+    transformer_decoder = TransformerDecoder(
+        context_length,
+        num_heads,
+        model_dim,
+        ffn_dim,
+        num_blocks,
+        input_text,
+    )
 
+    text, targets = transformer_decoder.get_tokens_and_targets()
     checkpoint = tf.train.Checkpoint(TransformerDecoder)
     checkpoint.restore(tf.train.latest_checkpoint(model_path))
 

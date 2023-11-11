@@ -1,4 +1,13 @@
 **/*.tar
 temp/*
-data/
+data/cifar-10-batches-py
+data/cifar-100-python
+data/t10k-images-idx3-ubyte
+data/t10k-images-idx3-ubyte.gz
+data/t10k-labels-idx1-ubyte
+data/t10k-labels-idx1-ubyte.gz
+data/train-images-idx3-ubyte
+data/train-images-idx3-ubyte.gz
+data/train-labels-idx1-ubyte
+data/train-labels-idx1-ubyte.gz
 artifacts/**/model/

@@ -9,3 +9,6 @@
 - Test the model. e.g. ``` test.py ./runners/classify_cifar10.py ```.
 
 - View the results in ``` ./artifacts ```.
+
+# Transformer Assignment
+I overfit on my very own dataset of over 800 possible biters and bitees. Each biter bites one and only bitee and no single bitee is bit by more than one biter.

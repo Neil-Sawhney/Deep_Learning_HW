@@ -48,9 +48,11 @@ class TransformerDecoder(tf.Module):
         self.input_text = input_text
         self.context_length = context_length
         if vocab_file is None:
-            vocab_file = self.create_vocab_file(input_text)
+            self.vocab_file = self._create_vocab_file(input_text)
+        else:
+            self.vocab_file = vocab_file
 
-        self.embedder = EmbedToVocabFile(vocab_file, model_dim)
+        self.embedder = EmbedToVocabFile(self.vocab_file, model_dim)
         self.positional_encoding = PositionalEncoding(context_length, model_dim)
 
         self.layers = [
@@ -61,7 +63,7 @@ class TransformerDecoder(tf.Module):
         self.vocab_size = self.embedder.get_vocab_size()
         self.linear = Linear(model_dim, self.vocab_size)
 
-    def create_vocab_file(self, input_text):
+    def _create_vocab_file(self, input_text):
         # Tokenize the contents of the file
         tokenizer = Tokenizer(self.context_length, False)
         tokenized_text = tokenizer(input_text)
@@ -80,6 +82,9 @@ class TransformerDecoder(tf.Module):
                 if token != unique_tokens[-1]:
                     vocab_file.write("\n")
         return vocab_file
+
+    def get_vocab_file(self):
+        return self.vocab_file
 
     def get_tokens_and_targets(self):
         tokenizer = Tokenizer(self.context_length, False)
@@ -101,9 +106,9 @@ class TransformerDecoder(tf.Module):
         )
         # make the main diagonal 0
         causal_mask = causal_mask - tf.eye(input_tokens.shape[1])
-        # causal_mask = causal_mask[tf.newaxis, :, :]
+
+        # TODO: fix the pad mask, or not, there's not thaaaat much padding
         # pad_mask = tf.cast(tf.equal(input_tokens, b"<PAD>"), tf.float32)
-        # combined_mask = tf.maximum(pad_mask[:, tf.newaxis, :], causal_mask)
 
         embeddings = self.embedder(input_tokens)
         embeddings = self.positional_encoding(embeddings)
