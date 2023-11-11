@@ -96,18 +96,20 @@ class TransformerDecoder(tf.Module):
         return self.embedder.decode(logits)
 
     def __call__(self, input_tokens, training=True):
+        causal_mask = tf.linalg.band_part(
+            tf.ones((input_tokens.shape[1], input_tokens.shape[1])), 0, -1
+        )
+        # make the main diagonal 0
+        causal_mask = causal_mask - tf.eye(input_tokens.shape[1])
+        # causal_mask = causal_mask[tf.newaxis, :, :]
+        # pad_mask = tf.cast(tf.equal(input_tokens, b"<PAD>"), tf.float32)
+        # combined_mask = tf.maximum(pad_mask[:, tf.newaxis, :], causal_mask)
+
         embeddings = self.embedder(input_tokens)
         embeddings = self.positional_encoding(embeddings)
 
-        mask = tf.linalg.band_part(
-            tf.ones((input_tokens.shape[1], input_tokens.shape[1])), 0, -1
-        )
-
-        # make the main diagonal 0
-        mask = mask - tf.eye(input_tokens.shape[1])
-
         for layer in self.layers:
-            embeddings = layer(embeddings, mask, training)
+            embeddings = layer(embeddings, causal_mask, training)
 
         output = self.linear(embeddings)
         return output

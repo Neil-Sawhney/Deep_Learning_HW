@@ -94,11 +94,10 @@ class MultiHeadAttention(tf.Module):
             # we want -inf where mask is 1 because of the softmax
             scaled_attention_logits += mask * -1e9
 
-        output = tf.einsum(
-            "bhqk,bhkd->bhqd",
-            scaled_attention_logits,
-            v,
-        )
+        # Apply softmax to turn the attention scores into probabilities
+        attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
+
+        output = tf.matmul(attention_weights, v)
 
         return output
 
