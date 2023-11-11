@@ -34,9 +34,8 @@ class TransformerDecoderBlock(tf.Module):
             hidden_layer_width=ffn_dim,
             hidden_activation=tf.nn.relu,
         )
-        # TODO: remove keras
-        self.groupnorm1 = tf.keras.layers.LayerNormalization(axis=[-1])
-        self.groupnorm2 = tf.keras.layers.LayerNormalization(axis=[-1])
+        self.groupnorm1 = GroupNorm(model_dim // 5, 2, 1)
+        self.groupnorm2 = GroupNorm(model_dim // 5, 2, 1)
 
     def __call__(self, inputs, mask=False, training=False):
         attn = self.mha(

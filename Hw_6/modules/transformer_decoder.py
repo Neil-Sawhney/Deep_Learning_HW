@@ -50,7 +50,7 @@ class TransformerDecoder(tf.Module):
         if vocab_file is None:
             self.vocab_file = self._create_vocab_file(input_text)
         else:
-            self.vocab_file = vocab_file
+            self.vocab_file = tf.io.gfile.GFile(vocab_file, "r")
 
         self.embedder = EmbedToVocabFile(self.vocab_file, model_dim)
         self.positional_encoding = PositionalEncoding(context_length, model_dim)
@@ -81,6 +81,7 @@ class TransformerDecoder(tf.Module):
                 vocab_file.write(f"{token.decode('utf-8')}")
                 if token != unique_tokens[-1]:
                     vocab_file.write("\n")
+
         return vocab_file
 
     def get_vocab_file(self):

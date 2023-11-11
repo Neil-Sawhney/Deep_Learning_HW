@@ -6,7 +6,6 @@ import numpy as np
 import tensorflow as tf
 import tqdm
 import yaml
-from datasets import load_dataset
 
 from helpers.adam import Adam
 from modules.transformer_decoder import TransformerDecoder
@@ -286,12 +285,6 @@ def test(model_path: Path):
     config_path = Path("artifacts/who_bites_who/model/model.yaml")
 
     config = yaml.safe_load(config_path.read_text())
-    refresh_rate = config["display"]["refresh_rate"]
-    batch_size = config["learning"]["batch_size"]
-    learning_patience = config["learning"]["learning_patience"]
-    learning_rates = config["learning"]["learning_rates"]
-    num_iters = config["learning"]["num_iters"]
-    weight_decay = config["learning"]["weight_decay"]
     context_length = config["data"]["context_length"]
     num_heads = config["transformer"]["num_heads"]
     model_dim = config["transformer"]["model_dim"]
@@ -302,30 +295,18 @@ def test(model_path: Path):
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
+    vocab_file = Path("artifacts/who_bites_who/model/vocab.txt")
+
     transformer_decoder = TransformerDecoder(
         context_length,
         num_heads,
         model_dim,
         ffn_dim,
         num_blocks,
-        input_text,
+        vocab_file=vocab_file,
     )
 
-    text, targets = transformer_decoder.get_tokens_and_targets()
-    checkpoint = tf.train.Checkpoint(TransformerDecoder)
+    checkpoint = tf.train.Checkpoint(transformer_decoder)
     checkpoint.restore(tf.train.latest_checkpoint(model_path))
 
-    dataset = load_dataset("ag_news")
-    test_labels = dataset["test"]["label"]
-    test_text = dataset["test"]["text"]
-
-    test_text = tf.convert_to_tensor(test_text)
-    test_labels = tf.convert_to_tensor(test_labels)
-
-    test_accuracy_value = test_accuracy(TransformerDecoder, test_text, test_labels)
-
-    print(f"Test Accuracy => {test_accuracy_value:0.4f}")
-
-    file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
-    file.write(f"{test_accuracy_value:0.4f}")
-    file.close()
+    pass

@@ -6,11 +6,11 @@
     "configurations": [
 
         {
-            "name": "Debug who_bites_who with checkpoint",
+            "name": "Test who_bites_who",
             "type": "python",
             "request": "launch",
-            "program": "./train.py",
-            "args": ["./runners/predict_who_bites_who.py", "-r"],
+            "program": "./test.py",
+            "args": ["./runners/predict_who_bites_who.py"],
             "console": "integratedTerminal",
             "justMyCode": true
         },

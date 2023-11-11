@@ -11,4 +11,6 @@
 - View the results in ``` ./artifacts ```.
 
 # Transformer Assignment
-I overfit on my very own dataset of over 800 possible biters and bitees. Each biter bites one and only bitee and no single bitee is bit by more than one biter.
+I overfit on my very own dataset of over 300 possible biters and bitees. Each biter bites one and only bitee and no single bitee is bit by more than one biter. This revolutionary dataset can be found in ``` ./data/who_bites_who.txt ```. The training plot is shown below.
+
+![Alt text](artifacts/who_bites_who/predict_who_bites_who_img_1.png)
