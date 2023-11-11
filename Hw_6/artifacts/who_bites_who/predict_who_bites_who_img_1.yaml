@@ -1,15 +1,14 @@
 data:
   context_length: 4
-  min_vocab_size: 100
 display:
   refresh_rate: 5
 learning:
-  batch_size: 5
+  batch_size: 500
   learning_patience: 20
   learning_rates:
   - 0.0005
   - 0.0001
-  - 0.0005
+  - 5.0e-05
   - 1.0e-05
   num_iters: 100000
   weight_decay: 0.2

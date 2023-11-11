@@ -1,3 +1,4 @@
+import tempfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -8,7 +9,6 @@ import yaml
 from datasets import load_dataset
 
 from helpers.adam import Adam
-from helpers.tokenizer import Tokenizer
 from modules.transformer_decoder import TransformerDecoder
 
 
@@ -37,7 +37,6 @@ def train(config_path: Path, use_last_checkpoint: bool):
     num_iters = config["learning"]["num_iters"]
     weight_decay = config["learning"]["weight_decay"]
     context_length = config["data"]["context_length"]
-    min_vocab_size = config["data"]["min_vocab_size"]
     num_heads = config["transformer"]["num_heads"]
     model_dim = config["transformer"]["model_dim"]
     ffn_dim = config["transformer"]["ffn_dim"]
@@ -47,34 +46,18 @@ def train(config_path: Path, use_last_checkpoint: bool):
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    # TODO: padding mask
-    with open("data/who_bites_who.txt", "r", encoding="utf-8") as f:
-        one_big_slab_of_text = f.read()
-
-    tokenizer = Tokenizer(context_length, False)
-    tokenized_text = tokenizer(one_big_slab_of_text)
-
-    # add the start token
-    targets = tokenized_text
-    hashed_targets = tf.strings.to_hash_bucket_fast(targets, min_vocab_size)
-
-    tokenized_text = tf.concat(
-        [
-            tf.fill([tokenized_text.shape[0], 1], b"<START>"),
-            tokenized_text,
-        ],
-        axis=1,
-    )
-    tokenized_text = tokenized_text[:, :-1]
+    input_file = "data/who_bites_who.txt"
 
     transformer_decoder = TransformerDecoder(
-        min_vocab_size,
         context_length,
         num_heads,
         model_dim,
         ffn_dim,
         num_blocks,
+        input_file,
     )
+
+    text, targets = transformer_decoder.get_tokens_and_targets()
 
     used_patience = 0
     minimum_train_loss = np.inf
@@ -97,9 +80,11 @@ def train(config_path: Path, use_last_checkpoint: bool):
     )
 
     checkpoint = tf.train.Checkpoint(transformer_decoder)
+    # create a temporary directory to store the checkpoints
+    temp_dir = tempfile.mkdtemp()
     checkpoint_manager = tf.train.CheckpointManager(
         checkpoint,
-        "temp/checkpointtemp/checkpoints/predict_who_bites_whos/predict_who_bites_who",
+        temp_dir,
         max_to_keep=1,
     )
     if use_last_checkpoint:
@@ -120,12 +105,12 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     for i in bar:
         batch_indices = rng.uniform(
-            shape=[batch_size], maxval=tokenized_text.shape[0], dtype=tf.int32
+            shape=[batch_size], maxval=text.shape[0], dtype=tf.int32
         )
 
         with tf.GradientTape() as tape:
-            input_tokens_batch = tf.gather(tokenized_text, batch_indices)
-            targets_batch = tf.gather(hashed_targets, batch_indices)
+            input_tokens_batch = tf.gather(text, batch_indices)
+            targets_batch = tf.gather(targets, batch_indices)
 
             labels = targets_batch
             logits = transformer_decoder(input_tokens_batch)
@@ -194,34 +179,55 @@ def train(config_path: Path, use_last_checkpoint: bool):
                 learning_rate_index += 1
                 adam.learning_rate = learning_rates[learning_rate_index]
                 learning_rate_change_steps = np.append(learning_rate_change_steps, i)
-                minimum_loss_step_num = i
-                # TODO: i feel like this should be here but smth is wrong
-                # checkpoint_manager.restore_or_initialize()
+                checkpoint_manager.restore_or_initialize()
 
     checkpoint_manager.restore_or_initialize()
+
+    # delete the temporary directory
+    tf.io.gfile.rmtree(temp_dir)
+
     checkpoint_manager = tf.train.CheckpointManager(
         checkpoint, "artifacts/who_bites_who/model", max_to_keep=1
     )
+    checkpoint_manager.save()
 
     batch_indices = rng.uniform(
-        shape=[batch_size], maxval=tokenized_text.shape[0], dtype=tf.int32
+        shape=[batch_size], maxval=text.shape[0], dtype=tf.int32
     )
-    input_tokens_batch = tf.gather(tokenized_text, batch_indices)
-    targets_batch = tf.gather(hashed_targets, batch_indices)
+    input_tokens_batch = tf.gather(text, batch_indices)
+    targets_batch = tf.gather(targets, batch_indices)
 
     fig, ax = plt.subplots(2, 1)
+    plt.subplots_adjust(hspace=0.5)
 
     ax[0].semilogy(x_train_loss_iterations, y_train_batch_loss, label="Training Loss")
     for learning_rate_change_step in learning_rate_change_steps:
-        ax[0].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
+        ax[0].axvline(
+            x=learning_rate_change_step,
+            color="black",
+            linestyle="dashed",
+            label="Learning Rate Change",
+        )
+    ax[0].axvline(
+        x=minimum_loss_step_num, color="red", linestyle="dashed", label="Minimum Loss"
+    )
     ax[0].set_xlabel("Iterations")
     ax[0].set_ylabel("Loss")
 
     ax[1].plot(x_train_accuracy_iterations, y_train_accuracy, label="Training Accuracy")
     for learning_rate_change_step in learning_rate_change_steps:
-        ax[1].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
+        ax[1].axvline(
+            x=learning_rate_change_step,
+            color="black",
+            linestyle="dashed",
+            label="Learning Rate Change",
+        )
+    ax[1].axvline(
+        x=minimum_loss_step_num, color="red", linestyle="dashed", label="Minimum Loss"
+    )
     ax[1].set_xlabel("Iterations")
     ax[1].set_ylabel("Accuracy")
+    ax[1].legend()
 
     print("\n\n\n\n")
 
@@ -294,6 +300,8 @@ def test(model_path: Path):
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
     file.write(f"{test_accuracy_value:0.4f}")
+    file.close()
+    file.close()
     file.close()
     file.close()
     file.close()

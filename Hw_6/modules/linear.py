@@ -2,14 +2,16 @@ import tensorflow as tf
 
 
 class Linear(tf.Module):
-    def __init__(self,
-                 num_inputs,
-                 num_outputs,
-                 bias=True,
-                 zero_init=False,):
+    def __init__(
+        self,
+        num_inputs,
+        num_outputs,
+        bias=True,
+        zero_init=False,
+    ):
         rng = tf.random.get_global_generator()
 
-        stddev = tf.math.sqrt(2 / (num_inputs + num_outputs))
+        stddev = tf.cast(tf.math.sqrt(2 / (num_inputs + num_outputs)), tf.float32)
 
         self.bias = bias
 
