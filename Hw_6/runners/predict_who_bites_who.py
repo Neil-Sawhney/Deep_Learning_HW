@@ -47,7 +47,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    # TODO: padding mask and causal mask, using the embedder
+    # TODO: padding mask
     with open("data/who_bites_who.txt", "r", encoding="utf-8") as f:
         one_big_slab_of_text = f.read()
 
@@ -98,7 +98,9 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     checkpoint = tf.train.Checkpoint(transformer_decoder)
     checkpoint_manager = tf.train.CheckpointManager(
-        checkpoint, "temp/checkpoints/predict_who_bites_who", max_to_keep=1
+        checkpoint,
+        "temp/checkpointtemp/checkpoints/predict_who_bites_whos/predict_who_bites_who",
+        max_to_keep=1,
     )
     if use_last_checkpoint:
         print("\n\nRestoring from last checkpoint")
@@ -193,18 +195,19 @@ def train(config_path: Path, use_last_checkpoint: bool):
                 adam.learning_rate = learning_rates[learning_rate_index]
                 learning_rate_change_steps = np.append(learning_rate_change_steps, i)
                 minimum_loss_step_num = i
-                checkpoint_manager.restore_or_initialize()
+                # TODO: i feel like this should be here but smth is wrong
+                # checkpoint_manager.restore_or_initialize()
 
     checkpoint_manager.restore_or_initialize()
+    checkpoint_manager = tf.train.CheckpointManager(
+        checkpoint, "artifacts/who_bites_who/model", max_to_keep=1
+    )
+
     batch_indices = rng.uniform(
         shape=[batch_size], maxval=tokenized_text.shape[0], dtype=tf.int32
     )
     input_tokens_batch = tf.gather(tokenized_text, batch_indices)
     targets_batch = tf.gather(hashed_targets, batch_indices)
-
-    labels = targets_batch
-    logits = transformer_decoder(input_tokens_batch)
-    final_train_accuracy = train_batch_accuracy(logits, labels)
 
     fig, ax = plt.subplots(2, 1)
 
@@ -214,17 +217,19 @@ def train(config_path: Path, use_last_checkpoint: bool):
     ax[0].set_xlabel("Iterations")
     ax[0].set_ylabel("Loss")
 
-    ax[1].semilogy(
-        x_train_accuracy_iterations, y_train_accuracy, label="Training Accuracy"
-    )
+    ax[1].plot(x_train_accuracy_iterations, y_train_accuracy, label="Training Accuracy")
     for learning_rate_change_step in learning_rate_change_steps:
         ax[1].axvline(x=learning_rate_change_step, color="black", linestyle="dashed")
     ax[1].set_xlabel("Iterations")
     ax[1].set_ylabel("Accuracy")
 
     print("\n\n\n\n")
-    # FIXME:why is it higher at the end
-    print(f"Final Training Loss => {current_train_loss:0.4f}")
+
+    labels = targets_batch
+    logits = transformer_decoder(input_tokens_batch)
+    final_train_accuracy = train_batch_accuracy(logits, labels)
+
+    print(f"Final Training Accuracy => {final_train_accuracy:0.4f}")
     print(f"Stop Iteration => {i}")
 
     fig.suptitle(
@@ -248,9 +253,8 @@ def train(config_path: Path, use_last_checkpoint: bool):
     config_path.write_text(yaml.dump(config))
 
     # save the model
-    checkpoint_manager.directory = "artifacts/who_bites_who/model"
     checkpoint_manager.save()
-    config_path = Path(f"artifacts/who_bites_who/model.yaml")
+    config_path = Path(f"artifacts/who_bites_who/model/model.yaml")
     config_path.write_text(yaml.dump(config))
 
 
@@ -274,20 +278,6 @@ def test(model_path: Path):
 
     num_word_to_tokenize = config["data"]["num_words_to_tokenize"]
 
-    # TODO: num_classes is now the number of tokens add that
-
-    # CLEANUP: remove
-    # num_classes = 4
-    # embed_classifier = EmbedClassifier(
-    #     num_embeddings,
-    #     embedding_depth,
-    #     num_word_to_tokenize,
-    #     dropout_prob,
-    #     num_hidden_layers,
-    #     hidden_layer_width,
-    #     num_classes,
-    # )
-
     checkpoint = tf.train.Checkpoint(TransformerDecoder)
     checkpoint.restore(tf.train.latest_checkpoint(model_path))
 
@@ -304,4 +294,6 @@ def test(model_path: Path):
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
     file.write(f"{test_accuracy_value:0.4f}")
+    file.close()
+    file.close()
     file.close()
