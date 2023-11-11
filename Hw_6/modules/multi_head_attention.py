@@ -90,7 +90,11 @@ class MultiHeadAttention(tf.Module):
             tf.cast(self.depth, tf.float32)
         )
 
+
         if mask is not None:
+            # stack the mask so it can be applied to each head
+            mask = tf.stack([mask for _ in range(self.num_heads)], axis=1)
+
             # we want -inf where mask is 1 because of the softmax
             scaled_attention_logits += mask * -1e9
 

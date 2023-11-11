@@ -79,9 +79,17 @@ def train(config_path: Path, use_last_checkpoint: bool):
         weight_decay=weight_decay,
     )
 
+    # find the temp_dir with the prefix "who_bites_who_" if it exists
+    # otherwise create a new one
+    temp_dir = None
+    for temp_dir in Path(tempfile.gettempdir()).iterdir():
+        if temp_dir.is_dir() and temp_dir.name.startswith("who_bites_who_"):
+            break
+
+    if not temp_dir.name.startswith("who_bites_who_"):
+        temp_dir = tempfile.mkdtemp(prefix="who_bites_who_")
+
     checkpoint = tf.train.Checkpoint(transformer_decoder)
-    # create a temporary directory to store the checkpoints
-    temp_dir = tempfile.mkdtemp()
     checkpoint_manager = tf.train.CheckpointManager(
         checkpoint,
         temp_dir,
@@ -114,6 +122,8 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
             labels = targets_batch
             logits = transformer_decoder(input_tokens_batch)
+            # TODO: REMOVE
+            fun = transformer_decoder.predict("Man bites")
             current_train_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=labels,

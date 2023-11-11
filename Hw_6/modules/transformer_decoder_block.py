@@ -34,8 +34,9 @@ class TransformerDecoderBlock(tf.Module):
             hidden_layer_width=ffn_dim,
             hidden_activation=tf.nn.relu,
         )
-        self.groupnorm1 = GroupNorm(model_dim // 5, 2, 1)
-        self.groupnorm2 = GroupNorm(model_dim // 5, 2, 1)
+        # Split the model dimension into 5 groups for group normalization
+        self.groupnorm1 = GroupNorm(model_dim // 4, model_dim, 1)
+        self.groupnorm2 = GroupNorm(model_dim // 4, model_dim, 1)
 
     def __call__(self, inputs, mask=False, training=False):
         attn = self.mha(
@@ -53,4 +54,5 @@ class TransformerDecoderBlock(tf.Module):
             ffn_output = tf.nn.dropout(ffn_output, rate=self.dropout_prob)
         out2 = out1 + ffn_output
 
+        return out2
         return out2
