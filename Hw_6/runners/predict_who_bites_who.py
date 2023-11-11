@@ -46,7 +46,8 @@ def train(config_path: Path, use_last_checkpoint: bool):
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    input_file = "data/who_bites_who.txt"
+    with open("data/who_bites_who.txt", "r", encoding="utf-8") as file:
+        input_text = file.read()
 
     transformer_decoder = TransformerDecoder(
         context_length,
@@ -54,7 +55,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
         model_dim,
         ffn_dim,
         num_blocks,
-        input_file,
+        input_text,
     )
 
     text, targets = transformer_decoder.get_tokens_and_targets()
@@ -227,7 +228,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     )
     ax[1].set_xlabel("Iterations")
     ax[1].set_ylabel("Accuracy")
-    ax[1].legend()
+    ax[1].legend(loc="lower left")
 
     print("\n\n\n\n")
 
@@ -300,8 +301,4 @@ def test(model_path: Path):
 
     file = open("artifacts/agnews/classify_agnews_test_accuracy.txt", "w")
     file.write(f"{test_accuracy_value:0.4f}")
-    file.close()
-    file.close()
-    file.close()
-    file.close()
     file.close()

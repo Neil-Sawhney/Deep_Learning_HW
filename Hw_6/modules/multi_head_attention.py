@@ -82,22 +82,21 @@ class MultiHeadAttention(tf.Module):
             output: output tensor of shape `(batch_size, num_heads, seq_len, depth)`
         """
         # matmul q and k while transposing k: (batch_size, num_heads, seq_len, seq_len)
-        matmul_qk = tf.einsum(
-            "bhqd,bhkd->bhqk",
-            q,
-            k,
+        # Transpose the last two dimensions of k
+        k_transposed = tf.transpose(k, [0, 1, 3, 2])
+        matmul_qk = tf.einsum("bnqd,bndk->bnqk", q, k_transposed)
+
+        scaled_attention_logits = matmul_qk / tf.math.sqrt(
+            tf.cast(self.depth, tf.float32)
         )
-        depth = tf.cast(tf.shape(k)[-1], tf.float32)
-        scaled_attention_logits = matmul_qk / tf.math.sqrt(depth)
 
         if mask is not None:
             # we want -inf where mask is 1 because of the softmax
             scaled_attention_logits += mask * -1e9
 
-        attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
         output = tf.einsum(
-            "bhqk,bhvd->bhqd",
-            attention_weights,
+            "bhqk,bhkd->bhqd",
+            scaled_attention_logits,
             v,
         )
 

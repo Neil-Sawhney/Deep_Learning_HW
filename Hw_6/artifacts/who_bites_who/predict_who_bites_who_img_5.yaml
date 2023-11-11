@@ -1,19 +1,19 @@
+data:
+  context_length: 6
 display:
   refresh_rate: 5
 learning:
   batch_size: 5
-  learning_patience: 100 
+  learning_patience: 20
   learning_rates:
   - 0.0005
   - 0.0001
-  - 0.00005
-  - 0.00001
+  - 5.0e-05
+  - 1.0e-05
   num_iters: 100000
   weight_decay: 0.2
-data:
-  context_length: 5 
 transformer:
-  num_heads: 8
-  model_dim: 512
   ffn_dim: 2048
+  model_dim: 512
   num_blocks: 6
+  num_heads: 8

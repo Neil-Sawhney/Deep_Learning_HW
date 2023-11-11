@@ -23,13 +23,12 @@ class TransformerDecoder(tf.Module):
         model_dim: Size of each attention head for value, query, and queue.
         ffn_dim: Size of the hidden layer in the feed-forward network.
         num_blocks: Number of transformer decoder blocks.
-        input_file: Path to the input file. Cannot be None for training.
+        input_text: Text to use for training. If None, training will not be possible.
         vocab_file: Path to the vocab file. If None, a temporary file will be created.
         dropout: Dropout probability.
 
     Call arguments:
         input: Input `Tensor` of shape `(B, seq_len)`.
-        mask: Optional mask tensor of shape `(B, seq_len, seq_len)`.
 
     Returns:
         Output `Tensor` of shape `(B, seq_len, vocab_size)`.
@@ -42,14 +41,14 @@ class TransformerDecoder(tf.Module):
         model_dim,
         ffn_dim,
         num_blocks,
-        input_file=None,
+        input_text=None,
         vocab_file=None,
         dropout_prob=0.1,
     ):
-        self.input_file = input_file
+        self.input_text = input_text
         self.context_length = context_length
         if vocab_file is None:
-            vocab_file = self.create_vocab_file(input_file)
+            vocab_file = self.create_vocab_file(input_text)
 
         self.embedder = EmbedToVocabFile(vocab_file, model_dim)
         self.positional_encoding = PositionalEncoding(context_length, model_dim)
@@ -62,11 +61,7 @@ class TransformerDecoder(tf.Module):
         self.vocab_size = self.embedder.get_vocab_size()
         self.linear = Linear(model_dim, self.vocab_size)
 
-    def create_vocab_file(self, input_file):
-        # Open the input file and read its contents
-        with open(input_file, "r", encoding="utf-8") as f:
-            input_text = f.read()
-
+    def create_vocab_file(self, input_text):
         # Tokenize the contents of the file
         tokenizer = Tokenizer(self.context_length, False)
         tokenized_text = tokenizer(input_text)
@@ -87,11 +82,8 @@ class TransformerDecoder(tf.Module):
         return vocab_file
 
     def get_tokens_and_targets(self):
-        with open(self.input_file, "r", encoding="utf-8") as f:
-            input_text = f.read()
-
         tokenizer = Tokenizer(self.context_length, False)
-        tokenized_text = tokenizer(input_text)
+        tokenized_text = tokenizer(self.input_text)
 
         tokenized_targets = tokenized_text[:, 1:]
         tokenized_text = tokenized_text[:, :-1]
@@ -103,13 +95,16 @@ class TransformerDecoder(tf.Module):
     def decode(self, logits):
         return self.embedder.decode(logits)
 
-    def __call__(self, input_tokens, mask=False, training=True):
+    def __call__(self, input_tokens, training=True):
         embeddings = self.embedder(input_tokens)
         embeddings = self.positional_encoding(embeddings)
 
         mask = tf.linalg.band_part(
             tf.ones((input_tokens.shape[1], input_tokens.shape[1])), 0, -1
         )
+
+        # make the main diagonal 0
+        mask = mask - tf.eye(input_tokens.shape[1])
 
         for layer in self.layers:
             embeddings = layer(embeddings, mask, training)
