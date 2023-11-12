@@ -122,8 +122,6 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
             labels = targets_batch
             logits = transformer_decoder(input_tokens_batch)
-            # TODO: REMOVE
-            fun = transformer_decoder.predict("Man bites")
             current_train_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=labels,
@@ -319,4 +317,11 @@ def test(model_path: Path):
     checkpoint = tf.train.Checkpoint(transformer_decoder)
     checkpoint.restore(tf.train.latest_checkpoint(model_path))
 
-    pass
+    print("\n\n\n\nEnter 'exit' to exit")
+    while 1:
+        input_text = input("\n\nEnter a sentence: ")
+        if input_text == "exit":
+            break
+
+        tokenized_text = transformer_decoder.predict(input_text)
+        print(f"Bite Bot: " + tokenized_text)

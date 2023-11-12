@@ -15,4 +15,10 @@ I overfit on my very own dataset of over 300 possible biters and bitees. Each bi
 
 My transformer features <SOS> and <EOS> tokens, generation with auto stopping at <EOS> tokens, padding and causal mask, batching, and support for input sequences of arbitray length.
 
-![Alt text](artifacts/who_bites_who/predict_who_bites_who_img_2.png)
+![Alt text](artifacts/who_bites_who/predict_who_bites_who_img_3.png)
+
+Run ``` test.py ./runners/who_bites_who.py ``` to see who really bites who.
+
+Some of my results below:
+
+![Alt text](image.png)

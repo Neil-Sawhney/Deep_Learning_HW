@@ -55,4 +55,3 @@ class TransformerDecoderBlock(tf.Module):
         out2 = out1 + ffn_output
 
         return out2
-        return out2

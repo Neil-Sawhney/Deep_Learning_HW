@@ -82,13 +82,13 @@ class TransformerDecoder(tf.Module):
         return self.embedder.decode(logits)
 
     def predict(self, input_text):
-        tokenized_text = self.tokenizer(input_text)
-
         len_input = len(input_text.split())
 
         output_index = len_input
         output = ""
         for _ in range(self.context_length - len_input):
+            tokenized_text = self.tokenizer(input_text)
+
             logits = self.__call__(tokenized_text, training=False)
 
             decoded_logits = self.decode(logits)
@@ -99,13 +99,11 @@ class TransformerDecoder(tf.Module):
 
             output_index += 1
 
-            if next_word_decoded == "<EOS>":
+            if next_word_decoded == "<EOS>" or next_word_decoded == "<PAD>":
                 break
 
-            elif next_word_decoded == "<PAD>":
-                continue
-
             output += " " + next_word_decoded
+            input_text += " " + next_word_decoded
 
         return output
 
