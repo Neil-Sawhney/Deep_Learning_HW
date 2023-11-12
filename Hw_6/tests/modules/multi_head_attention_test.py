@@ -3,58 +3,42 @@ import pytest
 
 def test_masked_multi_head_attention():
     import tensorflow as tf
-    from tensorflow import linalg, ones, zeros
-    from transformer import MultiHeadAttention
+
+    from modules.multi_head_attention import MultiHeadAttention
 
     rng = tf.random.get_global_generator()
-    rng.reset_from_seed(2384230948)
+    rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
+    tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    input_seq_length = 5  # Maximum length of the input sequence
-    h = 1  # Number of self-attention heads
-    d_k = 3  # Dimensionality of the linearly projected queries and keys
-    d_v = 3  # Dimensionality of the linearly projected values
-    d_model = 3  # Dimensionality of the model sub-layers' outputs
-    batch_size = 1  # Batch size from the training process
+    context_length = 5
+    num_heads = 1
+    model_dim = 3
+    batch_size = 1
 
-    queries = rng.normal(shape=[batch_size, input_seq_length, d_k])
-    keys = rng.normal(shape=[batch_size, input_seq_length, d_k])
-    values = rng.normal(shape=[batch_size, input_seq_length, d_v])
-    input = [queries, keys, values]
-    """
-     triangular matrix mask looks like this (it gets multiplied by 
-     -1e9 to act as -inf as mentioned in paper)
-      [[0., 1., 1., 1., 1.],
-       [0., 0., 1., 1., 1.],
-       [0., 0., 0., 1., 1.],
-       [0., 0., 0., 0., 1.],
-       [0., 0., 0., 0., 0.]]
-       """
-    mask = 1 - linalg.band_part(ones((input_seq_length, input_seq_length)), -1, 0)
+    queries = rng.normal(shape=[batch_size, context_length, model_dim])
+    keys = rng.normal(shape=[batch_size, context_length, model_dim])
+    values = rng.normal(shape=[batch_size, context_length, model_dim])
 
-    attention = MultiHeadAttention(h, d_model)
+    mask = tf.linalg.band_part(tf.ones((context_length, context_length)), 0, -1)
+    # make the main diagonal 0
+    mask = mask - tf.eye(context_length)
+
+    # stack causal mask for each batch resulting in shape (B, seq_len, seq_len)
+    mask = tf.stack([mask for _ in range(batch_size)])
+
+    mha = MultiHeadAttention(num_heads, model_dim)
+
     with tf.GradientTape() as tape:
-        tape.watch(input)  # needed for non-Variables
-        multihead_output = attention(input[0], input[1], input[2], mask)
-    dy_dx = tape.jacobian(multihead_output, input)
+        tape.watch([queries, keys, values])
+        output = mha(queries, keys, values, mask)
 
-    # dy_dx[2][0][0][0][0][0] not equal to zeroes -> first input token is
-    #   dependant on start token
-    # dy_dx[2][0][0][0][0][1] equal to zeroes -> first input token is not
-    #   dependant on second token in sequence
-    tf.debugging.assert_none_equal(
-        dy_dx[2][0][0][0][0][0],
-        zeros(shape=dy_dx[2][0][0][0][0][0].shape),
-        summarize=2,
-    )
-    tf.debugging.assert_equal(
-        dy_dx[2][0][0][0][0][1],
-        zeros(shape=dy_dx[2][0][0][0][0][1].shape),
-        summarize=2,
-    )
-    # to print out all 5 words print:
-    # dy_dx[2][0][0][0][0][1] dy_dx[2][0][1][0][0][1]
-    # dy_dx[2][0][2][0][0][1] dy_dx[2][0][3][0][0][1]
-    # dy_dx[2][0][4][0][0][1]
+    dy_dx = tape.gradient(output, [queries, keys, values])
+
+    # ensure that the derivative is zero for future tokens with respect to previous tokens
+    assert tf.reduce_all(dy_dx[0][:, 0, 1:] == 0)
+
+    # ensure that the derivative is not zero for future tokens with respect to previous tokens
+    assert tf.reduce_all([dy_dx[0][:, i] != 0 for i in range(1, context_length)])
 
 
 if __name__ == "__main__":
