@@ -42,8 +42,5 @@ def test_causal_mask():
 
     gradients = tape.gradient(loss, embed_variables)
 
-    
-
-
 if __name__ == "__main__":
     pytest.main([__file__])
