@@ -22,6 +22,9 @@ class TransformerDecoderBlock(tf.Module):
     Call arguments:
         inputs: Input `Tensor` of shape `(B, seq_len, model_dim)`.
         mask: Optional mask tensor of shape `(B, seq_len, seq_len)`.
+
+    Returns:
+        Output `Tensor` of shape `(B, seq_len, model_dim)`.
     """
 
     def __init__(self, num_heads, model_dim, ffn_dim, dropout_prob=0.1):
@@ -38,7 +41,7 @@ class TransformerDecoderBlock(tf.Module):
         self.groupnorm1 = GroupNorm(model_dim // 4, model_dim, 1)
         self.groupnorm2 = GroupNorm(model_dim // 4, model_dim, 1)
 
-    def __call__(self, inputs, mask=False, training=False):
+    def __call__(self, inputs, mask=None, training=False):
         attn = self.mha(
             self.groupnorm1(inputs),
             self.groupnorm1(inputs),
