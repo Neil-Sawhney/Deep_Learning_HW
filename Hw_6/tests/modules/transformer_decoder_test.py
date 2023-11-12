@@ -72,5 +72,56 @@ def test_autoregressive():
     assert transformer_decoder.predict("Dog") == " bites professor curro."
 
 
+def test_exploding_gradients():
+    import tensorflow as tf
+
+    from helpers.adam import Adam
+    from modules.transformer_decoder import TransformerDecoder
+
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
+    tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
+
+    context_length = 6
+    num_heads = 8
+    model_dim = 512
+    ffn_dim = 2048
+    num_blocks = 6
+
+    input_text = "<SOS> Florida man bites dog. <EOS> Dog bites professor curro. <EOS>"
+
+    transformer_decoder = TransformerDecoder(
+        context_length,
+        num_heads,
+        model_dim,
+        ffn_dim,
+        num_blocks,
+        input_text,
+    )
+    learning_rate = 0.0001
+    adam = Adam(learning_rate)
+
+    text, targets = transformer_decoder.get_tokens_and_targets()
+
+    with tf.GradientTape() as tape:
+        labels = targets
+        logits = transformer_decoder(text)
+        loss = tf.reduce_mean(
+            tf.nn.sparse_softmax_cross_entropy_with_logits(
+                labels=labels,
+                logits=logits,
+            )
+        )
+
+    grads = tape.gradient(loss, transformer_decoder.trainable_variables)
+
+    adam.apply_gradients(zip(grads, transformer_decoder.trainable_variables))
+
+    for grad, var in zip(grads, transformer_decoder.trainable_variables):
+        tf.debugging.check_numerics(grad, message=f"{var.name}: ")
+
+    assert len(grads) == len(transformer_decoder.trainable_variables)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
