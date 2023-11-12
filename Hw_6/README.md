@@ -17,7 +17,7 @@ My transformer features <SOS> and <EOS> tokens, generation with auto stopping at
 
 ![Alt text](artifacts/who_bites_who/predict_who_bites_who_img_3.png)
 
-Run ``` test.py ./runners/who_bites_who.py ``` to see who really bites who.
+Run ``` test.py ./runners/who_bites_who.py ``` to talk to bite bot who will predict who bites who.
 
 Some of my results below:
 
