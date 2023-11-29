@@ -178,22 +178,29 @@ def train(config_path: Path, use_last_checkpoint: bool):
     )
     checkpoint_manager.save()
 
-    fig, ax = plt.subplots(3, 1)
-    plt.subplots_adjust(hspace=1)
+    fig = plt.figure(figsize=(10, 10))
 
-    ax[0].semilogy(x_train_loss_iterations, y_train_batch_loss, label="Training Loss")
+    # Create a grid of 2 rows and 2 columns
+    grid = plt.GridSpec(2, 2, hspace=0.2, wspace=0.2)
+
+    # Use the grid to specify the location of each subplot
+    main_ax = fig.add_subplot(grid[0, :])
+    y_image_ax = fig.add_subplot(grid[1, 0])
+    x_image_ax = fig.add_subplot(grid[1, 1])
+
+    main_ax.semilogy(x_train_loss_iterations, y_train_batch_loss, label="Training Loss")
     for learning_rate_change_step in learning_rate_change_steps:
-        ax[0].axvline(
+        main_ax.axvline(
             x=learning_rate_change_step,
             color="black",
             linestyle="dashed",
             label="Learning Rate Change",
         )
-    ax[0].axvline(
+    main_ax.axvline(
         x=minimum_loss_step_num, color="red", linestyle="dashed", label="Minimum Loss"
     )
-    ax[0].set_xlabel("Iterations")
-    ax[0].set_ylabel("Loss")
+    main_ax.set_xlabel("Iterations")
+    main_ax.set_ylabel("Loss")
 
     output_image = einops.rearrange(
         logits.numpy(), "(h w) c -> h w c", h=siren_resolution, w=siren_resolution
@@ -204,13 +211,19 @@ def train(config_path: Path, use_last_checkpoint: bool):
         output_image, (input_image.shape[1], input_image.shape[0])
     )
 
-    ax[1].imshow(cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB), interpolation="none")
-    ax[1].set_title("Ground Truth")
-    ax[1].axis("off")
+    y_image_ax.imshow(
+        cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB), interpolation="none"
+    )
+    y_image_ax.set_title("Ground Truth")
+    y_image_ax.axis("off")
 
-    ax[2].imshow(cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB), interpolation="none")
-    ax[2].set_title("Prediction")
-    ax[2].axis("off")
+    x_image_ax.imshow(
+        cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB), interpolation="none"
+    )
+    x_image_ax.set_title("Prediction")
+    x_image_ax.axis("off")
+
+    plt.show()
 
     print("\n\n\n\n")
 
