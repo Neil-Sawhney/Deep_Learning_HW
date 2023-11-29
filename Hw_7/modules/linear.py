@@ -9,8 +9,10 @@ class Linear(tf.Module):
         bias=True,
         zero_init=False,
         siren_init=False,
+        siren_first=False,
     ):
         rng = tf.random.get_global_generator()
+        self.siren_first = siren_first
 
         stddev = tf.cast(tf.math.sqrt(2 / (num_inputs + num_outputs)), tf.float32)
 
@@ -25,6 +27,13 @@ class Linear(tf.Module):
                 maxval=tf.math.sqrt(6 / num_inputs),
                 shape=[num_inputs, num_outputs],
             )
+        elif siren_first:
+            w_initial_value = rng.uniform(
+                minval=-1,
+                maxval=1,
+                shape=[num_inputs, num_outputs],
+            )
+
         self.w = tf.Variable(
             w_initial_value,
             trainable=True,
@@ -44,6 +53,9 @@ class Linear(tf.Module):
     # optional bias
     def __call__(self, x):
         z = x @ self.w
+
+        if self.siren_first:
+            z *= 30
 
         if self.bias:
             z += self.b

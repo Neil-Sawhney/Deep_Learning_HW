@@ -2,7 +2,7 @@
 %%Title: image_fit_card_f.py, linear.py, siren_mlp.py, train.py
 %%For: 
 %%Creator: a2ps version 4.14
-%%CreationDate: Wed Nov 29 15:20:08 2023
+%%CreationDate: Wed Nov 29 15:32:17 2023
 %%BoundingBox: 24 24 571 818
 %%DocumentData: Clean7Bit
 %%Orientation: Portrait
@@ -1559,7 +1559,7 @@ x0 y0 moveto
 (            tf.tensor: output tensor of shape [batch_size, num_outputs]) N
 (        ) S
 (""") p n
-(        x = self.hidden_activation\(self.first_linear\(x\) * 30\)) N
+(        x = self.hidden_activation\(self.first_linear\(x\) * 100\)) N
 () N
 (        ) S
 (for) K
@@ -1576,7 +1576,7 @@ x0 y0 moveto
 (        ) S
 (return) K
 ( self.output_activation\(self.final_linear\(x\)\)) p n
-(siren_mlp.py) (Page 1/1) (Nov 29, 23 15:13) title
+(siren_mlp.py) (Page 1/1) (Nov 29, 23 15:32) title
 border
 grestore
 (Printed by ) rhead

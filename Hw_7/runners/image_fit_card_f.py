@@ -26,6 +26,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     weight_decay = config["learning"]["weight_decay"]
     num_hidden_layers = config["siren"]["num_hidden_layers"]
     hidden_layer_width = config["siren"]["hidden_layer_width"]
+    siren_resolution = config["siren"]["resolution"]
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
@@ -44,7 +45,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     input_image = cv2.imread("data/TestCardF.jpg")
 
     # Resize the image
-    resized_img = cv2.resize(input_image, (180, 180))
+    resized_img = cv2.resize(input_image, (siren_resolution, siren_resolution))
 
     # normalize the image
     img = resized_img / 255
@@ -194,24 +195,20 @@ def train(config_path: Path, use_last_checkpoint: bool):
     ax[0].set_xlabel("Iterations")
     ax[0].set_ylabel("Loss")
 
-    output_image = einops.rearrange(logits.numpy(), "(h w) c -> h w c", h=180, w=180)
+    output_image = einops.rearrange(
+        logits.numpy(), "(h w) c -> h w c", h=siren_resolution, w=siren_resolution
+    )
 
     # reshape output to input image shape
     output_image = cv2.resize(
         output_image, (input_image.shape[1], input_image.shape[0])
     )
 
-    ax[1].imshow(
-        input_image,
-        interpolation="nearest",
-    )
+    ax[1].imshow(cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB), interpolation="none")
     ax[1].set_title("Ground Truth")
     ax[1].axis("off")
 
-    ax[2].imshow(
-        output_image,
-        interpolation="nearest",
-    )
+    ax[2].imshow(cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB), interpolation="none")
     ax[2].set_title("Prediction")
     ax[2].axis("off")
 

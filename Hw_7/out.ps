@@ -2,7 +2,7 @@
 %%Title: image_fit_card_f.py, linear.py, siren_mlp.py, train.py
 %%For: 
 %%Creator: a2ps version 4.14
-%%CreationDate: Wed Nov 29 15:32:17 2023
+%%CreationDate: Wed Nov 29 16:24:24 2023
 %%BoundingBox: 24 24 571 818
 %%DocumentData: Clean7Bit
 %%Orientation: Portrait
@@ -825,16 +825,6 @@ x0 y0 moveto
 ("][") p
 (weight_decay) str
 ("]) p n
-(    num_inputs = config[") S
-(siren) str
-("][") p
-(num_inputs) str
-("]) p n
-(    num_outputs = config[") S
-(siren) str
-("][") p
-(num_outputs) str
-("]) p n
 (    num_hidden_layers = config[") S
 (siren) str
 ("][") p
@@ -851,8 +841,8 @@ x0 y0 moveto
 (    tf.random.set_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
 () N
 (    siren = SirenMLP\() N
-(        num_inputs,) N
-(        num_outputs,) N
+(        2,) N
+(        3,) N
 (        num_hidden_layers=num_hidden_layers,) N
 (        hidden_layer_width=hidden_layer_width,) N
 (        hidden_activation=tf.math.sin,) N
@@ -867,11 +857,11 @@ x0 y0 moveto
 () N
 (    ) S
 (# Resize the image) c n
-(    resized_image = cv2.resize\(input_image, \(180, 180\)\)) p n
+(    resized_img = cv2.resize\(input_image, \(180, 180\)\)) p n
 () N
 (    ) S
-(# Normalize the image) c n
-(    img = resized_image / 255) p n
+(# normalize the image) c n
+(    img = resized_img / 255) p n
 () N
 (    target = einops.rearrange\(img, ") S
 (h w c -> \(h w\) c) str
@@ -891,7 +881,9 @@ x0 y0 moveto
 (    x_reshaped = x.reshape\(-1, 1\)) p n
 (    y_reshaped = y.reshape\(-1, 1\)) N
 (    img = tf.cast\(tf.concat\(\(x_reshaped, y_reshaped\), 1\), tf.float32\)) N
-(image_fit_card_f.py) (Page 1/5) (Nov 29, 23 15:03) title
+() N
+(    used_patience = 0) N
+(image_fit_card_f.py) (Page 1/5) (Nov 29, 23 16:22) title
 border
 grestore
 (Printed by ) rhead
@@ -910,9 +902,7 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
-() p n
-(    used_patience = 0) N
-(    minimum_train_loss = np.inf) N
+(    minimum_train_loss = np.inf) p n
 (    minimum_loss_step_num = 0) N
 () N
 (    ) S
@@ -1035,7 +1025,9 @@ x0 y0 moveto
 (        ) S
 (if) K
 ( current_train_loss < minimum_train_loss:) p n
-(image_fit_card_f.py) (Page 2/5) (Nov 29, 23 15:03) title
+(            minimum_train_loss = current_train_loss) N
+(            minimum_loss_step_num = i) N
+(image_fit_card_f.py) (Page 2/5) (Nov 29, 23 16:22) title
 border
 grestore
 (Printed by ) rhead
@@ -1054,9 +1046,7 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
-(            minimum_train_loss = current_train_loss) p n
-(            minimum_loss_step_num = i) N
-(            checkpoint_manager.save\(\)) N
+(            checkpoint_manager.save\(\)) p n
 (        used_patience = i - minimum_loss_step_num) N
 () N
 (        y_train_batch_loss = np.append\(y_train_batch_loss, current_train_loss\)) N
@@ -1161,7 +1151,13 @@ x0 y0 moveto
 (ss) S
 (") p n
 (    \)) N
-(image_fit_card_f.py) (Page 3/5) (Nov 29, 23 15:03) title
+(    ax[0].set_xlabel\(") S
+(Iterations) str
+("\)) p n
+(    ax[0].set_ylabel\(") S
+(Loss) str
+("\)) p n
+(image_fit_card_f.py) (Page 3/5) (Nov 29, 23 16:22) title
 border
 grestore
 (Printed by ) rhead
@@ -1180,17 +1176,20 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
-(    ax[0].set_xlabel\(") p
-(Iterations) str
-("\)) p n
-(    ax[0].set_ylabel\(") S
-(Loss) str
-("\)) p n
+() p n
+(    output_image = einops.rearrange\(logits.numpy\(\), ") S
+(\(h w\) c -> h w c) str
+(", h=180, w=180) p n
+(\)) N
+() N
+(    ) S
+(# reshape output to input image shape) c n
+(    output_image = cv2.resize\() p n
+(        output_image, \(input_image.shape[1], input_image.shape[0]\)) N
+(    \)) N
 () N
 (    ax[1].imshow\() N
-(        einops.rearrange\(target, ") S
-(\(h w\) c -> h w c) str
-(", h=resolution\),) p n
+(        input_image,) N
 (        interpolation=") S
 (nearest) str
 (",) p n
@@ -1203,9 +1202,7 @@ x0 y0 moveto
 ("\)) p n
 () N
 (    ax[2].imshow\() N
-(        einops.rearrange\(logits, ") S
-(\(h w\) c -> h w c) str
-(", h=resolution\),) p n
+(        output_image,) N
 (        interpolation=") S
 (nearest) str
 (",) p n
@@ -1264,73 +1261,27 @@ x0 y0 moveto
 (    config_path.write_text\(yaml.dump\(config\)\)) N
 () N
 () N
-(def) K
-( test\(model_path: Path\):) p n
-(    ) S
-(if) K
-( model_path ) p
-(is) K
-( None:) p n
-(        model_path = Path\(") S
-(artifacts/who_bites_who/model) str
-("\)) p n
-() N
-(    ) S
-(if) K
-( ) p
-(not) K
-( model_path.exists\(\):) p n
-(        ) S
-(print) K
-(\(") p
-(Model does not exist, run the train script first) str
-("\)) p n
-(        ) S
-(return) K n
+(# def test\(model_path: Path\):) c n
+(#     if model_path is None:) N
+(#         model_path = Path\("artifacts/who_bites_who/model"\)) N
 () p n
-(    config_path = Path\(") S
-(artifacts/who_bites_who/model/model.yaml) str
-("\)) p n
-() N
-(    config = yaml.safe_load\(config_path.read_text\(\)\)) N
-(    context_length = config[") S
-(data) str
-("][") p
-(context_length) str
-("]) p n
-(    num_heads = config[") S
-(transformer) str
-("][") p
-(num_heads) str
-("]) p n
-(    model_dim = config[") S
-(transformer) str
-("][") p
-(model_dim) str
-("]) p n
-(    ffn_dim = config[") S
-(transformer) str
-("][") p
-(ffn_dim) str
-("]) p n
-(    num_blocks = config[") S
-(transformer) str
-("][") p
-(num_blocks) str
-("]) p n
-() N
-(    rng = tf.random.get_global_generator\(\)) N
-(    rng.reset_from_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
-(    tf.random.set_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
-() N
-(    vocab_file = Path\(") S
-(artifacts/who_bites_who/model/vocab.txt) str
-("\)) p n
-() N
-(    transformer_decoder = TransformerDecoder\() N
-(        context_length,) N
-(        num_heads,) N
-(image_fit_card_f.py) (Page 4/5) (Nov 29, 23 15:03) title
+(#     if not model_path.exists\(\):) c n
+(#         print\("Model does not exist, run the train script first"\)) N
+(#         return) N
+() p n
+(#     config_path = Path\("artifacts/who_bites_who/model/model.yaml"\)) c n
+() p n
+(#     config = yaml.safe_load\(config_path.read_text\(\)\)) c n
+(#     context_length = config["data"]["context_length"]) N
+(#     num_heads = config["transformer"]["num_heads"]) N
+(#     model_dim = config["transformer"]["model_dim"]) N
+(#     ffn_dim = config["transformer"]["ffn_dim"]) N
+(#     num_blocks = config["transformer"]["num_blocks"]) N
+() p n
+(#     rng = tf.random.get_global_generator\(\)) c n
+(#     rng.reset_from_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
+(#     tf.random.set_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
+(image_fit_card_f.py) (Page 4/5) (Nov 29, 23 16:22) title
 border
 grestore
 (Printed by ) rhead
@@ -1349,41 +1300,30 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
-(        model_dim,) p n
-(        ffn_dim,) N
-(        num_blocks,) N
-(        vocab_file=vocab_file,) N
-(    \)) N
-() N
-(    checkpoint = tf.train.Checkpoint\(transformer_decoder\)) N
-(    checkpoint.restore\(tf.train.latest_checkpoint\(model_path\)\)) N
-() N
-(    ) S
-(print) K
-(\(") p
-(\\n\\n\\n\\nEnter 'exit' to exit) str
-("\)) p n
-(    ) S
-(while) K
-( 1:) p n
-(        input_text = input\(") S
-(\\n\\nEnter a sentence: ) str
-("\)) p n
-(        ) S
-(if) K
-( input_text == ") p
-(exit) str
-(":) p n
-(            ) S
-(break) K n
 () p n
-(        tokenized_text = transformer_decoder.predict\(input_text\)) N
-(        ) S
-(print) K
-(\(f") p
-(Bite Bot: ) str
-(" + tokenized_text\)) p n
-(image_fit_card_f.py) (Page 5/5) (Nov 29, 23 15:03) title
+(#     vocab_file = Path\("artifacts/who_bites_who/model/vocab.txt"\)) c n
+() p n
+(#     transformer_decoder = TransformerDecoder\() c n
+(#         context_length,) N
+(#         num_heads,) N
+(#         model_dim,) N
+(#         ffn_dim,) N
+(#         num_blocks,) N
+(#         vocab_file=vocab_file,) N
+(#     \)) N
+() p n
+(#     checkpoint = tf.train.Checkpoint\(transformer_decoder\)) c n
+(#     checkpoint.restore\(tf.train.latest_checkpoint\(model_path\)\)) N
+() p n
+(#     print\("\\n\\n\\n\\nEnter 'exit' to exit"\)) c n
+(#     while 1:) N
+(#         input_text = input\("\\n\\nEnter a sentence: "\)) N
+(#         if input_text == "exit":) N
+(#             break) N
+() p n
+(#         tokenized_text = transformer_decoder.predict\(input_text\)) c n
+(#         print\(f"Bite Bot: " + tokenized_text\)) N
+(image_fit_card_f.py) (Page 5/5) (Nov 29, 23 16:22) title
 border
 grestore
 (Printed by ) rhead
@@ -1435,8 +1375,8 @@ x0 y0 moveto
 (elif) K
 ( siren_init:) p n
 (            w_initial_value = rng.uniform\() N
-(                minval=-tf.math.sqrt\(6 / num_outputs\),) N
-(                maxval=tf.math.sqrt\(6 / num_outputs\),) N
+(                minval=-tf.math.sqrt\(6 / num_inputs\),) N
+(                maxval=tf.math.sqrt\(6 / num_inputs\),) N
 (                shape=[num_inputs, num_outputs],) N
 (            \)) N
 (        self.w = tf.Variable\() N
@@ -1477,7 +1417,7 @@ x0 y0 moveto
 (        ) S
 (return) K
 ( z) p n
-(linear.py) (Page 1/1) (Nov 29, 23 15:13) title
+(linear.py) (Page 1/1) (Nov 29, 23 16:20) title
 border
 grestore
 (Printed by ) rhead
@@ -1526,24 +1466,24 @@ x0 y0 moveto
 (        self.hidden_layer_width = hidden_layer_width) N
 (        self.hidden_activation = hidden_activation) N
 (        self.output_activation = output_activation) N
-(        self.hidden_linear = \() N
-(            Linear\(self.hidden_layer_width, self.hidden_layer_width, siren_init=) N
-(True\)) N
-(            ) S
-(if) K
-( self.num_hidden_layers > 0) p n
-(            ) S
-(else) K
-( None) p n
-(        \)) N
+() N
 (        self.first_linear = Linear\(num_inputs, hidden_layer_width, siren_init=Tr) N
 (ue\)) N
+(        self.hidden_linears = [) N
+(            Linear\(hidden_layer_width, hidden_layer_width, siren_init=True\)) N
+(            ) S
+(for) K
+( _ ) p
+(in) K
+( range\(self.num_hidden_layers\)) p n
+(        ]) N
 (        self.final_linear = Linear\() N
 (            self.hidden_layer_width,) N
 (            self.num_outputs,) N
 (            zero_init=zero_init,) N
 (            siren_init=True,) N
 (        \)) N
+() N
 (        self.dropout_prob = dropout_prob) N
 () N
 (    ) S
@@ -1559,14 +1499,14 @@ x0 y0 moveto
 (            tf.tensor: output tensor of shape [batch_size, num_outputs]) N
 (        ) S
 (""") p n
-(        x = self.hidden_activation\(self.first_linear\(x\) * 100\)) N
+(        x = self.hidden_activation\(self.first_linear\(x\) * 30\)) N
 () N
 (        ) S
 (for) K
-( _ ) p
+( hidden_linear ) p
 (in) K
-( range\(self.num_hidden_layers\):) p n
-(            x = self.hidden_activation\(self.hidden_linear\(x\)\)) N
+( self.hidden_linears:) p n
+(            x = self.hidden_activation\(hidden_linear\(x\)\)) N
 () N
 (        ) S
 (if) K
@@ -1576,7 +1516,7 @@ x0 y0 moveto
 (        ) S
 (return) K
 ( self.output_activation\(self.final_linear\(x\)\)) p n
-(siren_mlp.py) (Page 1/1) (Nov 29, 23 15:32) title
+(siren_mlp.py) (Page 1/1) (Nov 29, 23 15:53) title
 border
 grestore
 (Printed by ) rhead
