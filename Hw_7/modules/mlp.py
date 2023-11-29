@@ -21,6 +21,7 @@ class MLP(tf.Module):
         self.hidden_layer_width = hidden_layer_width
         self.hidden_activation = hidden_activation
         self.output_activation = output_activation
+
         self.hidden_linear = (
             Linear(self.hidden_layer_width, self.hidden_layer_width)
             if self.num_hidden_layers > 0

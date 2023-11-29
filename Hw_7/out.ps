@@ -2,7 +2,7 @@
 %%Title: image_fit_card_f.py, linear.py, siren_mlp.py, train.py
 %%For: 
 %%Creator: a2ps version 4.14
-%%CreationDate: Wed Nov 29 15:03:23 2023
+%%CreationDate: Wed Nov 29 15:32:17 2023
 %%BoundingBox: 24 24 571 818
 %%DocumentData: Clean7Bit
 %%Orientation: Portrait
@@ -1417,7 +1417,6 @@ x0 y0 moveto
 (        bias=True,) N
 (        zero_init=False,) N
 (        siren_init=False,) N
-(        is_first=False,) N
 (    \):) N
 (        rng = tf.random.get_global_generator\(\)) N
 () N
@@ -1432,16 +1431,6 @@ x0 y0 moveto
 (if) K
 ( zero_init:) p n
 (            w_initial_value = tf.zeros\(shape=[num_inputs, num_outputs]\)) N
-(        ) S
-(elif) K
-( siren_init ) p
-(and) K
-( is_first:) p n
-(            w_initial_value = rng.uniform\() N
-(                minval=-1 / num_inputs,) N
-(                maxval=1 / num_inputs,) N
-(                shape=[num_inputs, num_outputs],) N
-(            \)) N
 (        ) S
 (elif) K
 ( siren_init:) p n
@@ -1488,7 +1477,7 @@ x0 y0 moveto
 (        ) S
 (return) K
 ( z) p n
-(linear.py) (Page 1/1) (Nov 29, 23 13:43) title
+(linear.py) (Page 1/1) (Nov 29, 23 15:13) title
 border
 grestore
 (Printed by ) rhead
@@ -1547,9 +1536,8 @@ x0 y0 moveto
 (else) K
 ( None) p n
 (        \)) N
-(        self.first_linear = Linear\() N
-(            num_inputs, hidden_layer_width, siren_init=True, is_first=True) N
-(        \)) N
+(        self.first_linear = Linear\(num_inputs, hidden_layer_width, siren_init=Tr) N
+(ue\)) N
 (        self.final_linear = Linear\() N
 (            self.hidden_layer_width,) N
 (            self.num_outputs,) N
@@ -1571,9 +1559,7 @@ x0 y0 moveto
 (            tf.tensor: output tensor of shape [batch_size, num_outputs]) N
 (        ) S
 (""") p n
-(        ) S
-(# TODO: multiply first linear by constant?) c n
-(        x = self.hidden_activation\(self.first_linear\(x\) * 30\)) p n
+(        x = self.hidden_activation\(self.first_linear\(x\) * 100\)) N
 () N
 (        ) S
 (for) K
@@ -1590,7 +1576,7 @@ x0 y0 moveto
 (        ) S
 (return) K
 ( self.output_activation\(self.final_linear\(x\)\)) p n
-(siren_mlp.py) (Page 1/1) (Nov 29, 23 15:03) title
+(siren_mlp.py) (Page 1/1) (Nov 29, 23 15:32) title
 border
 grestore
 (Printed by ) rhead

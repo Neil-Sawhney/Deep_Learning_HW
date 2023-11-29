@@ -24,8 +24,6 @@ def train(config_path: Path, use_last_checkpoint: bool):
     learning_rates = config["learning"]["learning_rates"]
     num_iters = config["learning"]["num_iters"]
     weight_decay = config["learning"]["weight_decay"]
-    num_inputs = config["siren"]["num_inputs"]
-    num_outputs = config["siren"]["num_outputs"]
     num_hidden_layers = config["siren"]["num_hidden_layers"]
     hidden_layer_width = config["siren"]["hidden_layer_width"]
 
@@ -34,8 +32,8 @@ def train(config_path: Path, use_last_checkpoint: bool):
     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
     siren = SirenMLP(
-        num_inputs,
-        num_outputs,
+        2,
+        3,
         num_hidden_layers=num_hidden_layers,
         hidden_layer_width=hidden_layer_width,
         hidden_activation=tf.math.sin,
@@ -46,10 +44,10 @@ def train(config_path: Path, use_last_checkpoint: bool):
     input_image = cv2.imread("data/TestCardF.jpg")
 
     # Resize the image
-    resized_image = cv2.resize(input_image, (180, 180))
+    resized_img = cv2.resize(input_image, (180, 180))
 
-    # Normalize the image
-    img = resized_image / 255
+    # normalize the image
+    img = resized_img / 255
 
     target = einops.rearrange(img, "h w c -> (h w) c")
 
@@ -196,15 +194,22 @@ def train(config_path: Path, use_last_checkpoint: bool):
     ax[0].set_xlabel("Iterations")
     ax[0].set_ylabel("Loss")
 
+    output_image = einops.rearrange(logits.numpy(), "(h w) c -> h w c", h=180, w=180)
+
+    # reshape output to input image shape
+    output_image = cv2.resize(
+        output_image, (input_image.shape[1], input_image.shape[0])
+    )
+
     ax[1].imshow(
-        einops.rearrange(target, "(h w) c -> h w c", h=resolution),
+        input_image,
         interpolation="nearest",
     )
     ax[1].set_title("Ground Truth")
     ax[1].axis("off")
 
     ax[2].imshow(
-        einops.rearrange(logits, "(h w) c -> h w c", h=resolution),
+        output_image,
         interpolation="nearest",
     )
     ax[2].set_title("Prediction")
@@ -233,46 +238,46 @@ def train(config_path: Path, use_last_checkpoint: bool):
     config_path.write_text(yaml.dump(config))
 
 
-def test(model_path: Path):
-    if model_path is None:
-        model_path = Path("artifacts/who_bites_who/model")
+# def test(model_path: Path):
+#     if model_path is None:
+#         model_path = Path("artifacts/who_bites_who/model")
 
-    if not model_path.exists():
-        print("Model does not exist, run the train script first")
-        return
+#     if not model_path.exists():
+#         print("Model does not exist, run the train script first")
+#         return
 
-    config_path = Path("artifacts/who_bites_who/model/model.yaml")
+#     config_path = Path("artifacts/who_bites_who/model/model.yaml")
 
-    config = yaml.safe_load(config_path.read_text())
-    context_length = config["data"]["context_length"]
-    num_heads = config["transformer"]["num_heads"]
-    model_dim = config["transformer"]["model_dim"]
-    ffn_dim = config["transformer"]["ffn_dim"]
-    num_blocks = config["transformer"]["num_blocks"]
+#     config = yaml.safe_load(config_path.read_text())
+#     context_length = config["data"]["context_length"]
+#     num_heads = config["transformer"]["num_heads"]
+#     model_dim = config["transformer"]["model_dim"]
+#     ffn_dim = config["transformer"]["ffn_dim"]
+#     num_blocks = config["transformer"]["num_blocks"]
 
-    rng = tf.random.get_global_generator()
-    rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
-    tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
+#     rng = tf.random.get_global_generator()
+#     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
+#     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
-    vocab_file = Path("artifacts/who_bites_who/model/vocab.txt")
+#     vocab_file = Path("artifacts/who_bites_who/model/vocab.txt")
 
-    transformer_decoder = TransformerDecoder(
-        context_length,
-        num_heads,
-        model_dim,
-        ffn_dim,
-        num_blocks,
-        vocab_file=vocab_file,
-    )
+#     transformer_decoder = TransformerDecoder(
+#         context_length,
+#         num_heads,
+#         model_dim,
+#         ffn_dim,
+#         num_blocks,
+#         vocab_file=vocab_file,
+#     )
 
-    checkpoint = tf.train.Checkpoint(transformer_decoder)
-    checkpoint.restore(tf.train.latest_checkpoint(model_path))
+#     checkpoint = tf.train.Checkpoint(transformer_decoder)
+#     checkpoint.restore(tf.train.latest_checkpoint(model_path))
 
-    print("\n\n\n\nEnter 'exit' to exit")
-    while 1:
-        input_text = input("\n\nEnter a sentence: ")
-        if input_text == "exit":
-            break
+#     print("\n\n\n\nEnter 'exit' to exit")
+#     while 1:
+#         input_text = input("\n\nEnter a sentence: ")
+#         if input_text == "exit":
+#             break
 
-        tokenized_text = transformer_decoder.predict(input_text)
-        print(f"Bite Bot: " + tokenized_text)
+#         tokenized_text = transformer_decoder.predict(input_text)
+#         print(f"Bite Bot: " + tokenized_text)

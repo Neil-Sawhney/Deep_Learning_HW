@@ -21,8 +21,8 @@ class Linear(tf.Module):
             w_initial_value = tf.zeros(shape=[num_inputs, num_outputs])
         elif siren_init:
             w_initial_value = rng.uniform(
-                minval=-tf.math.sqrt(6 / num_outputs),
-                maxval=tf.math.sqrt(6 / num_outputs),
+                minval=-tf.math.sqrt(6 / num_inputs),
+                maxval=tf.math.sqrt(6 / num_inputs),
                 shape=[num_inputs, num_outputs],
             )
         self.w = tf.Variable(
