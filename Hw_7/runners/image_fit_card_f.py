@@ -201,14 +201,18 @@ def train(config_path: Path, use_last_checkpoint: bool):
     )
     main_ax.set_xlabel("Iterations")
     main_ax.set_ylabel("Loss")
+    main_ax.legend()
 
     output_image = einops.rearrange(
         logits.numpy(), "(h w) c -> h w c", h=siren_resolution, w=siren_resolution
     )
 
-    # reshape output to input image shape
-    output_image = cv2.resize(
-        output_image, (input_image.shape[1], input_image.shape[0])
+    # Downscale the input image then rescale it back up to make it a fair comparison
+    downscaled_input_image = cv2.resize(
+        input_image, (siren_resolution, siren_resolution)
+    )
+    rescaled_input_image = cv2.resize(
+        input_image, (input_image.shape[1], input_image.shape[0])
     )
 
     y_image_ax.imshow(
@@ -217,19 +221,24 @@ def train(config_path: Path, use_last_checkpoint: bool):
     y_image_ax.set_title("Ground Truth")
     y_image_ax.axis("off")
 
+    # reshape output to input image shape
+    output_image = cv2.resize(
+        output_image, (input_image.shape[1], input_image.shape[0])
+    )
+
     x_image_ax.imshow(
         cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB), interpolation="none"
     )
     x_image_ax.set_title("Prediction")
     x_image_ax.axis("off")
 
+    fig.suptitle("Siren - Card F: Image Fitting")
+
     plt.show()
 
     print("\n\n\n\n")
 
     print(f"Stop Iteration => {i}")
-
-    fig.suptitle("Siren - Card F:")
 
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
