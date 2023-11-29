@@ -1,0 +1,3 @@
+echo "#### CREATING TAR FILE ####"
+tar cvf sawhney-neil-2023-hw7.tar --exclude=./data/cifar* --exclude=./data/t10k* --exclude=./data/train* --exclude=**/*/.pytest_cache --exclude=**/*/__pycache__ --exclude=./artifacts/**/model/* ./setup ./artifacts ./train.py ./test.py ./configs ./modules ./helpers ./runners ./README.md ./requirements.txt ./tests ./data
+echo "#### TAR FILE CREATED ####"
