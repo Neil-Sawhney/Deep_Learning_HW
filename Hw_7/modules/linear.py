@@ -9,7 +9,6 @@ class Linear(tf.Module):
         bias=True,
         zero_init=False,
         siren_init=False,
-        is_first=False,
     ):
         rng = tf.random.get_global_generator()
 
@@ -20,12 +19,6 @@ class Linear(tf.Module):
         w_initial_value = rng.normal(shape=[num_inputs, num_outputs], stddev=stddev)
         if zero_init:
             w_initial_value = tf.zeros(shape=[num_inputs, num_outputs])
-        elif siren_init and is_first:
-            w_initial_value = rng.uniform(
-                minval=-1 / num_inputs,
-                maxval=1 / num_inputs,
-                shape=[num_inputs, num_outputs],
-            )
         elif siren_init:
             w_initial_value = rng.uniform(
                 minval=-tf.math.sqrt(6 / num_outputs),

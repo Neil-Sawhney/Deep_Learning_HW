@@ -20,7 +20,6 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # HYPERPARAMETERS
     config = yaml.safe_load(config_path.read_text())
     refresh_rate = config["display"]["refresh_rate"]
-    batch_size = config["learning"]["batch_size"]
     learning_patience = config["learning"]["learning_patience"]
     learning_rates = config["learning"]["learning_rates"]
     num_iters = config["learning"]["num_iters"]
@@ -181,7 +180,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     checkpoint_manager.save()
 
     fig, ax = plt.subplots(3, 1)
-    plt.subplots_adjust(hspace=0.5)
+    plt.subplots_adjust(hspace=1)
 
     ax[0].semilogy(x_train_loss_iterations, y_train_batch_loss, label="Training Loss")
     for learning_rate_change_step in learning_rate_change_steps:

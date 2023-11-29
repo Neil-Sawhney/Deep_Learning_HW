@@ -1,16 +1,16 @@
 display:
   refresh_rate: 5
 learning:
-  learning_patience: 20 
+  learning_patience: 15
   learning_rates:
   - 0.0005
   - 0.0001
-  - 0.00005
-  - 0.00001
-  num_iters: 10000 
+  - 5.0e-05
+  - 1.0e-05
+  num_iters: 5000
   weight_decay: 0.2
 siren:
+  hidden_layer_width: 256
+  num_hidden_layers: 10
   num_inputs: 2
   num_outputs: 3
-  num_hidden_layers: 10
-  hidden_layer_width: 256

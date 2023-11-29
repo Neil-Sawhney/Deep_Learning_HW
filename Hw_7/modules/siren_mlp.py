@@ -26,9 +26,7 @@ class SirenMLP(tf.Module):
             if self.num_hidden_layers > 0
             else None
         )
-        self.first_linear = Linear(
-            num_inputs, hidden_layer_width, siren_init=True, is_first=True
-        )
+        self.first_linear = Linear(num_inputs, hidden_layer_width, siren_init=True)
         self.final_linear = Linear(
             self.hidden_layer_width,
             self.num_outputs,
@@ -46,7 +44,7 @@ class SirenMLP(tf.Module):
         Returns:
             tf.tensor: output tensor of shape [batch_size, num_outputs]
         """
-        x = self.hidden_activation(self.first_linear(x))
+        x = self.hidden_activation(self.first_linear(x) * 30)
 
         for _ in range(self.num_hidden_layers):
             x = self.hidden_activation(self.hidden_linear(x))
