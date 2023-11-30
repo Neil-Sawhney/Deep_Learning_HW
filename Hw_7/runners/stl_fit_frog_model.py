@@ -42,10 +42,11 @@ def train(config_path: Path, use_last_checkpoint: bool):
         output_activation=tf.math.sin,
     )
 
-    # Load the image
-    mesh = mesh.Mesh.from_file("data/frog.stl")
+    # Load the mesh
+    input_mesh = mesh.Mesh.from_file("data/frog.stl")
 
-    input_image = cv2.imread("data/TestCardF.jpg")
+    # Convert the mesh to an array of vectors
+    input_mesh_vect = np.array(input_mesh.vectors)
 
     # Resize the image
     resized_img = cv2.resize(input_image, (siren_resolution, siren_resolution))

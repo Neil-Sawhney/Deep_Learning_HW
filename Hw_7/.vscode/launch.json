@@ -10,12 +10,21 @@
             "type": "python",
             "request": "launch",
             "program": "./train.py",
+            "args": ["./runners/stl_fit_frog_model.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "stl_fit_card_f",
+            "type": "python",
+            "request": "launch",
+            "program": "./train.py",
             "args": ["./runners/image_fit_card_f.py"],
             "console": "integratedTerminal",
             "justMyCode": true
         },
         {
-            "name": "stl_fit_frog_model with checkpoint",
+            "name": "image_fit_card_f with checkpoint",
             "type": "python",
             "request": "launch",
             "program": "./train.py",
