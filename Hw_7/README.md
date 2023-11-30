@@ -11,3 +11,6 @@
 - View the results in ``` ./artifacts ```.
 
 # Siren
+Below is my result. The model never actually stopped automatically and was instead stopped by my maximum iteration hyperparameter. It had a final loss of 0.0003 and would likely have continued to decrease as shown by the red vertical line at the very end.
+
+![Alt text](artifacts/siren/siren_img_0.png)

@@ -53,6 +53,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     target = einops.rearrange(img, "h w c -> (h w) c")
 
     resolution = img.shape[0]
+
     # Generate a linear space from -1 to 1 with the same size as the resolution
     tmp = np.linspace(-1, 1, resolution)
 
@@ -212,11 +213,11 @@ def train(config_path: Path, use_last_checkpoint: bool):
         input_image, (siren_resolution, siren_resolution)
     )
     rescaled_input_image = cv2.resize(
-        input_image, (input_image.shape[1], input_image.shape[0])
+        downscaled_input_image, (input_image.shape[1], input_image.shape[0])
     )
 
     y_image_ax.imshow(
-        cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB), interpolation="none"
+        cv2.cvtColor(rescaled_input_image, cv2.COLOR_BGR2RGB), interpolation="none"
     )
     y_image_ax.set_title("Ground Truth")
     y_image_ax.axis("off")
@@ -255,48 +256,3 @@ def train(config_path: Path, use_last_checkpoint: bool):
     checkpoint_manager.save()
     config_path = Path(f"artifacts/siren/model/model.yaml")
     config_path.write_text(yaml.dump(config))
-
-
-# def test(model_path: Path):
-#     if model_path is None:
-#         model_path = Path("artifacts/who_bites_who/model")
-
-#     if not model_path.exists():
-#         print("Model does not exist, run the train script first")
-#         return
-
-#     config_path = Path("artifacts/who_bites_who/model/model.yaml")
-
-#     config = yaml.safe_load(config_path.read_text())
-#     context_length = config["data"]["context_length"]
-#     num_heads = config["transformer"]["num_heads"]
-#     model_dim = config["transformer"]["model_dim"]
-#     ffn_dim = config["transformer"]["ffn_dim"]
-#     num_blocks = config["transformer"]["num_blocks"]
-
-#     rng = tf.random.get_global_generator()
-#     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
-#     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
-
-#     vocab_file = Path("artifacts/who_bites_who/model/vocab.txt")
-
-#     transformer_decoder = TransformerDecoder(
-#         context_length,
-#         num_heads,
-#         model_dim,
-#         ffn_dim,
-#         num_blocks,
-#         vocab_file=vocab_file,
-#     )
-
-#     checkpoint = tf.train.Checkpoint(transformer_decoder)
-#     checkpoint.restore(tf.train.latest_checkpoint(model_path))
-
-#     print("\n\n\n\nEnter 'exit' to exit")
-#     while 1:
-#         input_text = input("\n\nEnter a sentence: ")
-#         if input_text == "exit":
-#             break
-
-#         tokenized_text = transformer_decoder.predict(input_text)
-#         print(f"Bite Bot: " + tokenized_text)
