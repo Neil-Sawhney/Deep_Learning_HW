@@ -48,11 +48,11 @@ def train(config_path: Path, use_last_checkpoint: bool):
     resized_img = cv2.resize(input_image, (siren_resolution, siren_resolution))
 
     # normalize the image
-    img = resized_img / 255
+    input_img = resized_img / 255
 
-    target = einops.rearrange(img, "h w c -> (h w) c")
+    target = einops.rearrange(input_img, "h w c -> (h w) c")
 
-    resolution = img.shape[0]
+    resolution = input_img.shape[0]
 
     # Generate a linear space from -1 to 1 with the same size as the resolution
     tmp = np.linspace(-1, 1, resolution)

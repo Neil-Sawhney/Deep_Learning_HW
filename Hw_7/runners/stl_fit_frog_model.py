@@ -1,8 +1,6 @@
 import tempfile
 from pathlib import Path
 
-import cv2
-import einops
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -16,7 +14,7 @@ from modules.siren_mlp import SirenMLP
 
 def train(config_path: Path, use_last_checkpoint: bool):
     if config_path is None:
-        config_path = Path("configs/image_fit_card_f.yaml")
+        config_path = Path("configs/stl_fit_frog_model.yaml")
 
     # HYPERPARAMETERS
     config = yaml.safe_load(config_path.read_text())
@@ -27,14 +25,13 @@ def train(config_path: Path, use_last_checkpoint: bool):
     weight_decay = config["learning"]["weight_decay"]
     num_hidden_layers = config["siren"]["num_hidden_layers"]
     hidden_layer_width = config["siren"]["hidden_layer_width"]
-    siren_resolution = config["siren"]["resolution"]
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
     tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
 
     siren = SirenMLP(
-        2,
+        3,
         3,
         num_hidden_layers=num_hidden_layers,
         hidden_layer_width=hidden_layer_width,
@@ -48,26 +45,14 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # Convert the mesh to an array of vectors
     input_mesh_vect = np.array(input_mesh.vectors)
 
-    # Resize the image
-    resized_img = cv2.resize(input_image, (siren_resolution, siren_resolution))
+    # Get the maximum value of the mesh
+    max_value = np.amax(input_mesh_vect)
 
-    # normalize the image
-    img = resized_img / 255
+    # normalize the mesh
+    input_mesh_vect = input_mesh_vect / max_value
 
-    target = einops.rearrange(img, "h w c -> (h w) c")
-
-    resolution = img.shape[0]
-
-    # Generate a linear space from -1 to 1 with the same size as the resolution
-    tmp = np.linspace(-1, 1, resolution)
-
-    # Create a meshgrid for pixel coordinates
-    x, y = np.meshgrid(tmp, tmp)
-
-    # Reshape and concatenate x and y, and cast them to float32
-    x_reshaped = x.reshape(-1, 1)
-    y_reshaped = y.reshape(-1, 1)
-    img = tf.cast(tf.concat((x_reshaped, y_reshaped), 1), tf.float32)
+    # Generate a tensor of value 1 with the same shape as the input mesh
+    mesh_template = np.ones(input_mesh_vect.shape)
 
     used_patience = 0
     minimum_train_loss = np.inf
@@ -91,11 +76,11 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # otherwise create a new one
     temp_dir = None
     for temp_dir in Path(tempfile.gettempdir()).iterdir():
-        if temp_dir.is_dir() and temp_dir.name.startswith("siren-fit-model_"):
+        if temp_dir.is_dir() and temp_dir.name.startswith("siren_fit_model_"):
             break
 
-    if not temp_dir.name.startswith("siren-fit-model_"):
-        temp_dir = tempfile.mkdtemp(prefix="siren-fit-model_")
+    if not temp_dir.name.startswith("siren_fit_model_"):
+        temp_dir = tempfile.mkdtemp(prefix="siren_fit_model_")
 
     checkpoint = tf.train.Checkpoint(siren)
     checkpoint_manager = tf.train.CheckpointManager(
@@ -118,9 +103,9 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     for i in bar:
         with tf.GradientTape() as tape:
-            logits = siren(img)
+            logits = siren(mesh_template)
 
-            current_train_loss = tf.reduce_mean((logits - target) ** 2)
+            current_train_loss = tf.reduce_mean((logits - input_mesh_vect) ** 2)
 
         # Print initial train batch loss
         if i == 0:
@@ -175,23 +160,22 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     checkpoint_manager.restore_or_initialize()
 
+    # save the predicted mesh
+    predicted_mesh = mesh.Mesh(
+        np.zeros(input_mesh.vectors.shape[0], dtype=mesh.Mesh.dtype)
+    )
+    predicted_mesh.vectors = siren(mesh_template).numpy() * max_value
+    predicted_mesh.save("artifacts/siren_fit_model/predicted_frog.stl")
+
     # delete the temporary directory
     tf.io.gfile.rmtree(temp_dir)
 
     checkpoint_manager = tf.train.CheckpointManager(
-        checkpoint, "artifacts/siren-fit-model/model", max_to_keep=1
+        checkpoint, "artifacts/siren_fit_model/model", max_to_keep=1
     )
     checkpoint_manager.save()
 
-    fig = plt.figure(figsize=(10, 10))
-
-    # Create a grid of 2 rows and 2 columns
-    grid = plt.GridSpec(2, 2, hspace=0.2, wspace=0.2)
-
-    # Use the grid to specify the location of each subplot
-    main_ax = fig.add_subplot(grid[0, :])
-    y_image_ax = fig.add_subplot(grid[1, 0])
-    x_image_ax = fig.add_subplot(grid[1, 1])
+    fig, main_ax = plt.subplots()
 
     main_ax.semilogy(x_train_loss_iterations, y_train_batch_loss, label="Training Loss")
     for learning_rate_change_step in learning_rate_change_steps:
@@ -208,36 +192,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     main_ax.set_ylabel("Loss")
     main_ax.legend()
 
-    output_image = einops.rearrange(
-        logits.numpy(), "(h w) c -> h w c", h=siren_resolution, w=siren_resolution
-    )
-
-    # Downscale the input image then rescale it back up to make it a fair comparison
-    downscaled_input_image = cv2.resize(
-        input_image, (siren_resolution, siren_resolution)
-    )
-    rescaled_input_image = cv2.resize(
-        downscaled_input_image, (input_image.shape[1], input_image.shape[0])
-    )
-
-    y_image_ax.imshow(
-        cv2.cvtColor(rescaled_input_image, cv2.COLOR_BGR2RGB), interpolation="none"
-    )
-    y_image_ax.set_title("Ground Truth")
-    y_image_ax.axis("off")
-
-    # reshape output to input image shape
-    output_image = cv2.resize(
-        output_image, (input_image.shape[1], input_image.shape[0])
-    )
-
-    x_image_ax.imshow(
-        cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB), interpolation="none"
-    )
-    x_image_ax.set_title("Prediction")
-    x_image_ax.axis("off")
-
-    fig.suptitle("Siren - Card F: Image Fitting")
+    fig.suptitle("Siren - Frog: Model Fitting")
 
     plt.show()
 
@@ -248,15 +203,15 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     file_index = 0
-    while Path(f"artifacts/siren-fit-model/siren_img_{file_index}.png").exists():
+    while Path(f"artifacts/siren_fit_model/siren_img_{file_index}.png").exists():
         file_index += 1
-    fig.savefig(f"artifacts/siren-fit-model/siren_img_{file_index}.png")
+    fig.savefig(f"artifacts/siren_fit_model/siren_img_{file_index}.png")
 
     # Save the config file as a yaml under the same name as the image
-    config_path = Path(f"artifacts/siren-fit-model/siren_img_{file_index}.yaml")
+    config_path = Path(f"artifacts/siren_fit_model/siren_img_{file_index}.yaml")
     config_path.write_text(yaml.dump(config))
 
     # save the model
     checkpoint_manager.save()
-    config_path = Path(f"artifacts/siren-fit-model/model/model.yaml")
+    config_path = Path(f"artifacts/siren_fit_model/model/model.yaml")
     config_path.write_text(yaml.dump(config))
