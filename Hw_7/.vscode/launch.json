@@ -6,7 +6,7 @@
     "configurations": [
 
         {
-            "name": "image_fit_card_f",
+            "name": "stl_fit_frog_model",
             "type": "python",
             "request": "launch",
             "program": "./train.py",
@@ -15,7 +15,7 @@
             "justMyCode": true
         },
         {
-            "name": "image_fit_card_f with checkpoint",
+            "name": "stl_fit_frog_model with checkpoint",
             "type": "python",
             "request": "launch",
             "program": "./train.py",

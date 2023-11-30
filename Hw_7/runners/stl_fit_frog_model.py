@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import tqdm
 import yaml
+from stl import mesh
 
 from helpers.adam import Adam
 from modules.siren_mlp import SirenMLP
@@ -42,6 +43,8 @@ def train(config_path: Path, use_last_checkpoint: bool):
     )
 
     # Load the image
+    mesh = mesh.Mesh.from_file("data/frog.stl")
+
     input_image = cv2.imread("data/TestCardF.jpg")
 
     # Resize the image
@@ -87,11 +90,11 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # otherwise create a new one
     temp_dir = None
     for temp_dir in Path(tempfile.gettempdir()).iterdir():
-        if temp_dir.is_dir() and temp_dir.name.startswith("siren-fit-image_"):
+        if temp_dir.is_dir() and temp_dir.name.startswith("siren-fit-model_"):
             break
 
-    if not temp_dir.name.startswith("siren-fit-image_"):
-        temp_dir = tempfile.mkdtemp(prefix="siren-fit-image_")
+    if not temp_dir.name.startswith("siren-fit-model_"):
+        temp_dir = tempfile.mkdtemp(prefix="siren-fit-model_")
 
     checkpoint = tf.train.Checkpoint(siren)
     checkpoint_manager = tf.train.CheckpointManager(
@@ -175,7 +178,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     tf.io.gfile.rmtree(temp_dir)
 
     checkpoint_manager = tf.train.CheckpointManager(
-        checkpoint, "artifacts/siren-fit-image/model", max_to_keep=1
+        checkpoint, "artifacts/siren-fit-model/model", max_to_keep=1
     )
     checkpoint_manager.save()
 
@@ -244,15 +247,15 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # if the file already exists add a number to the end of the file name
     # to avoid overwriting
     file_index = 0
-    while Path(f"artifacts/siren-fit-image/siren_img_{file_index}.png").exists():
+    while Path(f"artifacts/siren-fit-model/siren_img_{file_index}.png").exists():
         file_index += 1
-    fig.savefig(f"artifacts/siren-fit-image/siren_img_{file_index}.png")
+    fig.savefig(f"artifacts/siren-fit-model/siren_img_{file_index}.png")
 
     # Save the config file as a yaml under the same name as the image
-    config_path = Path(f"artifacts/siren-fit-image/siren_img_{file_index}.yaml")
+    config_path = Path(f"artifacts/siren-fit-model/siren_img_{file_index}.yaml")
     config_path.write_text(yaml.dump(config))
 
     # save the model
     checkpoint_manager.save()
-    config_path = Path(f"artifacts/siren-fit-image/model/model.yaml")
+    config_path = Path(f"artifacts/siren-fit-model/model/model.yaml")
     config_path.write_text(yaml.dump(config))
