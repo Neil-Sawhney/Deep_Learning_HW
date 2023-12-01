@@ -1,12 +1,12 @@
 %!PS-Adobe-3.0
-%%Title: image_fit_card_f.py, linear.py, siren_mlp.py, train.py
+%%Title: image_fit_card_f.py, linear.py, siren_mlp.py, train.py, test.py, README.md
 %%For: 
 %%Creator: a2ps version 4.14
-%%CreationDate: Wed Nov 29 16:24:24 2023
+%%CreationDate: Thu Nov 30 01:41:29 2023
 %%BoundingBox: 24 24 571 818
 %%DocumentData: Clean7Bit
 %%Orientation: Portrait
-%%Pages: 8
+%%Pages: 11
 %%PageOrder: Ascend
 %%DocumentMedia: A4 595 842 0 () ()
 %%DocumentNeededResources: font Courier
@@ -835,6 +835,16 @@ x0 y0 moveto
 ("][") p
 (hidden_layer_width) str
 ("]) p n
+(    siren_resolution = config[") S
+(siren) str
+("][") p
+(resolution) str
+("]) p n
+(    image_path = config[") S
+(data) str
+("][") p
+(image_path) str
+("]) p n
 () N
 (    rng = tf.random.get_global_generator\(\)) N
 (    rng.reset_from_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
@@ -851,23 +861,22 @@ x0 y0 moveto
 () N
 (    ) S
 (# Load the image) c n
-(    input_image = cv2.imread\(") p
-(data/TestCardF.jpg) str
-("\)) p n
+(    input_image = cv2.imread\(image_path\)) p n
 () N
 (    ) S
 (# Resize the image) c n
-(    resized_img = cv2.resize\(input_image, \(180, 180\)\)) p n
+(    resized_img = cv2.resize\(input_image, \(siren_resolution, siren_resolution\)\)) p n
 () N
 (    ) S
 (# normalize the image) c n
-(    img = resized_img / 255) p n
+(    input_img = resized_img / 255) p n
 () N
-(    target = einops.rearrange\(img, ") S
+(    target = einops.rearrange\(input_img, ") S
 (h w c -> \(h w\) c) str
 ("\)) p n
 () N
-(    resolution = img.shape[0]) N
+(    resolution = input_img.shape[0]) N
+() N
 (    ) S
 (# Generate a linear space from -1 to 1 with the same size as the resolution) c n
 (    tmp = np.linspace\(-1, 1, resolution\)) p n
@@ -880,14 +889,11 @@ x0 y0 moveto
 (# Reshape and concatenate x and y, and cast them to float32) c n
 (    x_reshaped = x.reshape\(-1, 1\)) p n
 (    y_reshaped = y.reshape\(-1, 1\)) N
-(    img = tf.cast\(tf.concat\(\(x_reshaped, y_reshaped\), 1\), tf.float32\)) N
-() N
-(    used_patience = 0) N
-(image_fit_card_f.py) (Page 1/5) (Nov 29, 23 16:22) title
+(image_fit_card_f.py) (Page 1/6) (Dec 01, 23 0:02) title
 border
 grestore
 (Printed by ) rhead
-() (1/8) (Wednesday November 29, 2023) footer
+() (1/11) (Thursday November 30, 2023) footer
 end % of iso1dict
 pagesave restore
 showpage
@@ -902,7 +908,11 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
-(    minimum_train_loss = np.inf) p n
+(    pixel_coordinates = tf.cast\(tf.concat\(\(x_reshaped, y_reshaped\), 1\), tf.float) p n
+(32\)) N
+() N
+(    used_patience = 0) N
+(    minimum_train_loss = np.inf) N
 (    minimum_loss_step_num = 0) N
 () N
 (    ) S
@@ -937,7 +947,7 @@ x0 y0 moveto
 ( temp_dir.is_dir\(\) ) p
 (and) K
 ( temp_dir.name.startswith\(") p
-(siren_) str
+(siren_fit_image_) str
 ("\):) p n
 (            ) S
 (break) K n
@@ -947,10 +957,10 @@ x0 y0 moveto
 ( ) p
 (not) K
 ( temp_dir.name.startswith\(") p
-(siren_) str
+(siren_fit_image_) str
 ("\):) p n
 (        temp_dir = tempfile.mkdtemp\(prefix=") S
-(siren_) str
+(siren_fit_image_) str
 ("\)) p n
 () N
 (    checkpoint = tf.train.Checkpoint\(siren\)) N
@@ -996,7 +1006,7 @@ x0 y0 moveto
 (in) K
 ( bar:) p n
 (        with tf.GradientTape\(\) as tape:) N
-(            logits = siren\(img\)) N
+(            logits = siren\(pixel_coordinates\)) N
 () N
 (            current_train_loss = tf.reduce_mean\(\(logits - target\) ** 2\)) N
 () N
@@ -1021,17 +1031,11 @@ x0 y0 moveto
 (        adam.apply_gradients\(zip\(grads, siren.trainable_variables\)\)) N
 () N
 (        current_train_loss = current_train_loss.numpy\(\)) N
-() N
-(        ) S
-(if) K
-( current_train_loss < minimum_train_loss:) p n
-(            minimum_train_loss = current_train_loss) N
-(            minimum_loss_step_num = i) N
-(image_fit_card_f.py) (Page 2/5) (Nov 29, 23 16:22) title
+(image_fit_card_f.py) (Page 2/6) (Dec 01, 23 0:02) title
 border
 grestore
 (Printed by ) rhead
-() (Wednesday November 29, 2023) (2/8) footer
+() (Thursday November 30, 2023) (2/11) footer
 end % of iso1dict
 pagesave restore
 showpage
@@ -1046,7 +1050,13 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
-(            checkpoint_manager.save\(\)) p n
+() p n
+(        ) S
+(if) K
+( current_train_loss < minimum_train_loss:) p n
+(            minimum_train_loss = current_train_loss) N
+(            minimum_loss_step_num = i) N
+(            checkpoint_manager.save\(\)) N
 (        used_patience = i - minimum_loss_step_num) N
 () N
 (        y_train_batch_loss = np.append\(y_train_batch_loss, current_train_loss\)) N
@@ -1112,56 +1122,38 @@ x0 y0 moveto
 () N
 (    checkpoint_manager = tf.train.CheckpointManager\() N
 (        checkpoint, ") S
-(artifacts/siren/model) str
+(artifacts/siren_fit_image/model) str
 (", max_to_keep=1) p n
 (    \)) N
 (    checkpoint_manager.save\(\)) N
 () N
-(    fig, ax = plt.subplots\(3, 1\)) N
-(    plt.subplots_adjust\(hspace=1\)) N
+(    fig = plt.figure\(figsize=\(10, 10\)\)) N
 () N
-(    ax[0].semilogy\(x_train_loss_iterations, y_train_batch_loss, label=") S
-(Training Los) str n
-(s) S
+(    ) S
+(# Create a grid of 2 rows and 2 columns) c n
+(    grid = plt.GridSpec\(2, 2, hspace=0.2, wspace=0.2\)) p n
+() N
+(    ) S
+(# Use the grid to specify the location of each subplot) c n
+(    main_ax = fig.add_subplot\(grid[0, :]\)) p n
+(    y_image_ax = fig.add_subplot\(grid[1, 0]\)) N
+(    x_image_ax = fig.add_subplot\(grid[1, 1]\)) N
+() N
+(    main_ax.semilogy\(x_train_loss_iterations, y_train_batch_loss, label=") S
+(Training ) str n
+(Loss) S
 ("\)) p n
 (    ) S
 (for) K
 ( learning_rate_change_step ) p
 (in) K
 ( learning_rate_change_steps:) p n
-(        ax[0].axvline\() N
-(            x=learning_rate_change_step,) N
-(            color=") S
-(black) str
-(",) p n
-(            linestyle=") S
-(dashed) str
-(",) p n
-(            label=") S
-(Learning Rate Change) str
-(",) p n
-(        \)) N
-(    ax[0].axvline\() N
-(        x=minimum_loss_step_num, color=") S
-(red) str
-(", linestyle=") p
-(dashed) str
-(", label=") p
-(Minimum Lo) str n
-(ss) S
-(") p n
-(    \)) N
-(    ax[0].set_xlabel\(") S
-(Iterations) str
-("\)) p n
-(    ax[0].set_ylabel\(") S
-(Loss) str
-("\)) p n
-(image_fit_card_f.py) (Page 3/5) (Nov 29, 23 16:22) title
+(        main_ax.axvline\() N
+(image_fit_card_f.py) (Page 3/6) (Dec 01, 23 0:02) title
 border
 grestore
 (Printed by ) rhead
-() (3/8) (Wednesday November 29, 2023) footer
+() (3/11) (Thursday November 30, 2023) footer
 end % of iso1dict
 pagesave restore
 showpage
@@ -1176,11 +1168,63 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
-() p n
-(    output_image = einops.rearrange\(logits.numpy\(\), ") S
+(            x=learning_rate_change_step,) p n
+(            color=") S
+(black) str
+(",) p n
+(            linestyle=") S
+(dashed) str
+(",) p n
+(            label=") S
+(Learning Rate Change) str
+(",) p n
+(        \)) N
+(    main_ax.axvline\() N
+(        x=minimum_loss_step_num, color=") S
+(red) str
+(", linestyle=") p
+(dashed) str
+(", label=") p
+(Minimum Lo) str n
+(ss) S
+(") p n
+(    \)) N
+(    main_ax.set_xlabel\(") S
+(Iterations) str
+("\)) p n
+(    main_ax.set_ylabel\(") S
+(Loss) str
+("\)) p n
+(    main_ax.legend\(\)) N
+() N
+(    output_image = einops.rearrange\() N
+(        logits.numpy\(\), ") S
 (\(h w\) c -> h w c) str
-(", h=180, w=180) p n
-(\)) N
+(", h=siren_resolution, w=siren_resolution) p n
+(    \)) N
+() N
+(    ) S
+(# Downscale the input image then rescale it back up to make it a fair compar) c n
+(ison) N
+(    downscaled_input_image = cv2.resize\() p n
+(        input_image, \(siren_resolution, siren_resolution\)) N
+(    \)) N
+(    rescaled_input_image = cv2.resize\() N
+(        downscaled_input_image, \(input_image.shape[1], input_image.shape[0]\)) N
+(    \)) N
+() N
+(    y_image_ax.imshow\() N
+(        cv2.cvtColor\(rescaled_input_image, cv2.COLOR_BGR2RGB\), interpolation=") S
+(no) str n
+(ne) S
+(") p n
+(    \)) N
+(    y_image_ax.set_title\(") S
+(Ground Truth) str
+("\)) p n
+(    y_image_ax.axis\(") S
+(off) str
+("\)) p n
 () N
 (    ) S
 (# reshape output to input image shape) c n
@@ -1188,31 +1232,23 @@ x0 y0 moveto
 (        output_image, \(input_image.shape[1], input_image.shape[0]\)) N
 (    \)) N
 () N
-(    ax[1].imshow\() N
-(        input_image,) N
-(        interpolation=") S
-(nearest) str
-(",) p n
+(    x_image_ax.imshow\() N
+(        cv2.cvtColor\(output_image, cv2.COLOR_BGR2RGB\), interpolation=") S
+(none) str
+(") p n
 (    \)) N
-(    ax[1].set_title\(") S
-(Ground Truth) str
+(    x_image_ax.set_title\(") S
+(Prediction) str
 ("\)) p n
-(    ax[1].axis\(") S
+(    x_image_ax.axis\(") S
 (off) str
 ("\)) p n
 () N
-(    ax[2].imshow\() N
-(        output_image,) N
-(        interpolation=") S
-(nearest) str
-(",) p n
-(    \)) N
-(    ax[2].set_title\(") S
-(Prediction) str
+(    fig.suptitle\(") S
+(Siren - Card F: Image Fitting) str
 ("\)) p n
-(    ax[2].axis\(") S
-(off) str
-("\)) p n
+() N
+(    plt.show\(\)) N
 () N
 (    ) S
 (print) K
@@ -1226,10 +1262,6 @@ x0 y0 moveto
 (Stop Iteration => {i}) str
 ("\)) p n
 () N
-(    fig.suptitle\(") S
-(Siren - Card F:) str
-("\)) p n
-() N
 (    ) S
 (# if the file already exists add a number to the end of the file name) c n
 (    ) p
@@ -1238,17 +1270,17 @@ x0 y0 moveto
 (    ) S
 (while) K
 ( Path\(f") p
-(artifacts/siren/siren_img_{file_index}.png) str
+(artifacts/siren_fit_image/siren_img_{file_index}.png) str
 ("\).exists\(\):) p n
 (        file_index += 1) N
 (    fig.savefig\(f") S
-(artifacts/siren/siren_img_{file_index}.png) str
+(artifacts/siren_fit_image/siren_img_{file_index}.png) str
 ("\)) p n
 () N
 (    ) S
 (# Save the config file as a yaml under the same name as the image) c n
 (    config_path = Path\(f") p
-(artifacts/siren/siren_img_{file_index}.yaml) str
+(artifacts/siren_fit_image/siren_img_{file_index}.yaml) str
 ("\)) p n
 (    config_path.write_text\(yaml.dump\(config\)\)) N
 () N
@@ -1256,36 +1288,13 @@ x0 y0 moveto
 (# save the model) c n
 (    checkpoint_manager.save\(\)) p n
 (    config_path = Path\(f") S
-(artifacts/siren/model/model.yaml) str
+(artifacts/siren_fit_image/model/model.yaml) str
 ("\)) p n
-(    config_path.write_text\(yaml.dump\(config\)\)) N
-() N
-() N
-(# def test\(model_path: Path\):) c n
-(#     if model_path is None:) N
-(#         model_path = Path\("artifacts/who_bites_who/model"\)) N
-() p n
-(#     if not model_path.exists\(\):) c n
-(#         print\("Model does not exist, run the train script first"\)) N
-(#         return) N
-() p n
-(#     config_path = Path\("artifacts/who_bites_who/model/model.yaml"\)) c n
-() p n
-(#     config = yaml.safe_load\(config_path.read_text\(\)\)) c n
-(#     context_length = config["data"]["context_length"]) N
-(#     num_heads = config["transformer"]["num_heads"]) N
-(#     model_dim = config["transformer"]["model_dim"]) N
-(#     ffn_dim = config["transformer"]["ffn_dim"]) N
-(#     num_blocks = config["transformer"]["num_blocks"]) N
-() p n
-(#     rng = tf.random.get_global_generator\(\)) c n
-(#     rng.reset_from_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
-(#     tf.random.set_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
-(image_fit_card_f.py) (Page 4/5) (Nov 29, 23 16:22) title
+(image_fit_card_f.py) (Page 4/6) (Dec 01, 23 0:02) title
 border
 grestore
 (Printed by ) rhead
-() (Wednesday November 29, 2023) (4/8) footer
+() (Thursday November 30, 2023) (4/11) footer
 end % of iso1dict
 pagesave restore
 showpage
@@ -1300,38 +1309,195 @@ llx lly 12 add translate
 /x0 x v get 4.703931 add sx cw mul add store
 /y0 y v get bfs th add sub store
 x0 y0 moveto
+(    config_path.write_text\(yaml.dump\(config\)\)) p n
+() N
+() N
+(def) K
+( test\(model_path: Path\):) p n
+(    ) S
+(if) K
+( model_path ) p
+(is) K
+( None:) p n
+(        model_path = Path\(") S
+(artifacts/siren_fit_image/model) str
+("\)) p n
+() N
+(    ) S
+(if) K
+( ) p
+(not) K
+( model_path.exists\(\):) p n
+(        ) S
+(print) K
+(\(") p
+(Model does not exist, run the train script first) str
+("\)) p n
+(        ) S
+(return) K n
 () p n
-(#     vocab_file = Path\("artifacts/who_bites_who/model/vocab.txt"\)) c n
-() p n
-(#     transformer_decoder = TransformerDecoder\() c n
-(#         context_length,) N
-(#         num_heads,) N
-(#         model_dim,) N
-(#         ffn_dim,) N
-(#         num_blocks,) N
-(#         vocab_file=vocab_file,) N
-(#     \)) N
-() p n
-(#     checkpoint = tf.train.Checkpoint\(transformer_decoder\)) c n
-(#     checkpoint.restore\(tf.train.latest_checkpoint\(model_path\)\)) N
-() p n
-(#     print\("\\n\\n\\n\\nEnter 'exit' to exit"\)) c n
-(#     while 1:) N
-(#         input_text = input\("\\n\\nEnter a sentence: "\)) N
-(#         if input_text == "exit":) N
-(#             break) N
-() p n
-(#         tokenized_text = transformer_decoder.predict\(input_text\)) c n
-(#         print\(f"Bite Bot: " + tokenized_text\)) N
-(image_fit_card_f.py) (Page 5/5) (Nov 29, 23 16:22) title
+(    config_path = Path\(") S
+(artifacts/siren_fit_image/model/model.yaml) str
+("\)) p n
+() N
+(    ) S
+(# HYPERPARAMETERS) c n
+(    config = yaml.safe_load\(config_path.read_text\(\)\)) p n
+(    num_hidden_layers = config[") S
+(siren) str
+("][") p
+(num_hidden_layers) str
+("]) p n
+(    hidden_layer_width = config[") S
+(siren) str
+("][") p
+(hidden_layer_width) str
+("]) p n
+(    siren_resolution = config[") S
+(siren) str
+("][") p
+(resolution) str
+("]) p n
+(    image_path = config[") S
+(data) str
+("][") p
+(image_path) str
+("]) p n
+() N
+(    rng = tf.random.get_global_generator\(\)) N
+(    rng.reset_from_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
+(    tf.random.set_seed\(0x43966E87BD57227011B5B03B58785EC1\)) N
+() N
+(    siren = SirenMLP\() N
+(        2,) N
+(        3,) N
+(        num_hidden_layers=num_hidden_layers,) N
+(        hidden_layer_width=hidden_layer_width,) N
+(        hidden_activation=tf.math.sin,) N
+(        output_activation=tf.math.sin,) N
+(    \)) N
+() N
+(    checkpoint = tf.train.Checkpoint\(siren\)) N
+(    checkpoint.restore\(tf.train.latest_checkpoint\(model_path\)\)) N
+() N
+(    ) S
+(# Generate an out of bounds pixel coordinate) c n
+(    tmp = np.linspace\(-1.5, 1.5, siren_resolution\)) p n
+() N
+(    ) S
+(# Create a meshgrid for pixel coordinates) c n
+(    x, y = np.meshgrid\(tmp, tmp\)) p n
+() N
+(    ) S
+(# Reshape and concatenate x and y, and cast them to float32) c n
+(    x_reshaped = x.reshape\(-1, 1\)) p n
+(    y_reshaped = y.reshape\(-1, 1\)) N
+(    pixel_coordinates = tf.cast\(tf.concat\(\(x_reshaped, y_reshaped\), 1\), tf.float) N
+(32\)) N
+() N
+(    logits = siren\(pixel_coordinates\)) N
+() N
+(    fig = plt.figure\(figsize=\(10, 5\)\)) N
+() N
+(    ) S
+(# Create a grid of 1 rows and 2 columns) c n
+(    grid = plt.GridSpec\(1, 2, hspace=0.2, wspace=0.2\)) p n
+() N
+(    ) S
+(# Use the grid to specify the location of each subplot) c n
+(    y_image_ax = fig.add_subplot\(grid[0, 0]\)) p n
+(    x_image_ax = fig.add_subplot\(grid[0, 1]\)) N
+() N
+(    output_image = einops.rearrange\() N
+(        logits.numpy\(\), ") S
+(\(h w\) c -> h w c) str
+(", h=siren_resolution, w=siren_resolution) p n
+(    \)) N
+() N
+(    ) S
+(# Load the image) c n
+(    input_image = cv2.imread\(image_path\)) p n
+() N
+(image_fit_card_f.py) (Page 5/6) (Dec 01, 23 0:02) title
 border
 grestore
 (Printed by ) rhead
-() (5/8) (Wednesday November 29, 2023) footer
+() (5/11) (Thursday November 30, 2023) footer
 end % of iso1dict
 pagesave restore
 showpage
-%%Page: (1) 6
+%%Page: (6) 6
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 4.703931 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p
+(# Downscale the input image then rescale it back up to make it a fair compar) c n
+(ison) N
+(    downscaled_input_image = cv2.resize\() p n
+(        input_image, \(siren_resolution, siren_resolution\)) N
+(    \)) N
+(    rescaled_input_image = cv2.resize\() N
+(        downscaled_input_image, \(input_image.shape[1], input_image.shape[0]\)) N
+(    \)) N
+() N
+(    y_image_ax.imshow\() N
+(        cv2.cvtColor\(rescaled_input_image, cv2.COLOR_BGR2RGB\), interpolation=") S
+(no) str n
+(ne) S
+(") p n
+(    \)) N
+(    y_image_ax.set_title\(") S
+(Ground Truth) str
+("\)) p n
+(    y_image_ax.axis\(") S
+(off) str
+("\)) p n
+(    ) S
+(# if the file already exists add a number to the end of the file name) c n
+() p n
+(    ) S
+(# reshape output to input image shape) c n
+(    output_image = cv2.resize\() p n
+(        output_image, \(input_image.shape[1], input_image.shape[0]\)) N
+(    \)) N
+() N
+(    x_image_ax.imshow\() N
+(        cv2.cvtColor\(output_image, cv2.COLOR_BGR2RGB\), interpolation=") S
+(none) str
+(") p n
+(    \)) N
+(    x_image_ax.set_title\(") S
+(Prediction) str
+("\)) p n
+(    x_image_ax.axis\(") S
+(off) str
+("\)) p n
+() N
+(    fig.suptitle\(") S
+(Siren - Card F: Out of Bounds Fitting) str
+("\)) p n
+() N
+(    plt.show\(\)) N
+() N
+(    fig.savefig\(f") S
+(artifacts/siren_fit_image/siren_img_out_of_bounds.png) str
+("\)) p n
+(image_fit_card_f.py) (Page 6/6) (Dec 01, 23 0:02) title
+border
+grestore
+(Printed by ) rhead
+() (Thursday November 30, 2023) (6/11) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (1) 7
 %%BeginPageSetup
 /pagesave save def
 %%EndPageSetup
@@ -1357,8 +1523,10 @@ x0 y0 moveto
 (        bias=True,) N
 (        zero_init=False,) N
 (        siren_init=False,) N
+(        siren_first=False,) N
 (    \):) N
 (        rng = tf.random.get_global_generator\(\)) N
+(        self.siren_first = siren_first) N
 () N
 (        stddev = tf.cast\(tf.math.sqrt\(2 / \(num_inputs + num_outputs\)\), tf.float3) N
 (2\)) N
@@ -1379,6 +1547,15 @@ x0 y0 moveto
 (                maxval=tf.math.sqrt\(6 / num_inputs\),) N
 (                shape=[num_inputs, num_outputs],) N
 (            \)) N
+(        ) S
+(elif) K
+( siren_first:) p n
+(            w_initial_value = rng.uniform\() N
+(                minval=-1,) N
+(                maxval=1,) N
+(                shape=[num_inputs, num_outputs],) N
+(            \)) N
+() N
 (        self.w = tf.Variable\() N
 (            w_initial_value,) N
 (            trainable=True,) N
@@ -1411,21 +1588,26 @@ x0 y0 moveto
 () N
 (        ) S
 (if) K
+( self.siren_first:) p n
+(            z *= 30) N
+() N
+(        ) S
+(if) K
 ( self.bias:) p n
 (            z += self.b) N
 () N
 (        ) S
 (return) K
 ( z) p n
-(linear.py) (Page 1/1) (Nov 29, 23 16:20) title
+(linear.py) (Page 1/1) (Nov 29, 23 21:45) title
 border
 grestore
 (Printed by ) rhead
-() (Wednesday November 29, 2023) (6/8) footer
+() (7/11) (Thursday November 30, 2023) footer
 end % of iso1dict
 pagesave restore
 showpage
-%%Page: (1) 7
+%%Page: (1) 8
 %%BeginPageSetup
 /pagesave save def
 %%EndPageSetup
@@ -1467,8 +1649,8 @@ x0 y0 moveto
 (        self.hidden_activation = hidden_activation) N
 (        self.output_activation = output_activation) N
 () N
-(        self.first_linear = Linear\(num_inputs, hidden_layer_width, siren_init=Tr) N
-(ue\)) N
+(        self.first_linear = Linear\(num_inputs, hidden_layer_width, siren_first=T) N
+(rue\)) N
 (        self.hidden_linears = [) N
 (            Linear\(hidden_layer_width, hidden_layer_width, siren_init=True\)) N
 (            ) S
@@ -1499,7 +1681,7 @@ x0 y0 moveto
 (            tf.tensor: output tensor of shape [batch_size, num_outputs]) N
 (        ) S
 (""") p n
-(        x = self.hidden_activation\(self.first_linear\(x\) * 30\)) N
+(        x = self.hidden_activation\(self.first_linear\(x\)\)) N
 () N
 (        ) S
 (for) K
@@ -1516,15 +1698,15 @@ x0 y0 moveto
 (        ) S
 (return) K
 ( self.output_activation\(self.final_linear\(x\)\)) p n
-(siren_mlp.py) (Page 1/1) (Nov 29, 23 15:53) title
+(siren_mlp.py) (Page 1/1) (Nov 29, 23 21:40) title
 border
 grestore
 (Printed by ) rhead
-() (7/8) (Wednesday November 29, 2023) footer
+() (Thursday November 30, 2023) (8/11) footer
 end % of iso1dict
 pagesave restore
 showpage
-%%Page: (1) 8
+%%Page: (1) 9
 %%BeginPageSetup
 /pagesave save def
 %%EndPageSetup
@@ -1600,7 +1782,138 @@ x0 y0 moveto
 border
 grestore
 (Printed by ) rhead
-() (Wednesday November 29, 2023) (8/8) footer
+() (9/11) (Thursday November 30, 2023) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (1) 10
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 4.703931 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(#!/usr/bin/env python3) c n
+() p n
+(import) K
+( argparse) p n
+(import) K
+( importlib) p n
+(from) K
+( pathlib ) p
+(import) K
+( Path) p n
+() N
+(import) K
+( argcomplete) p n
+() N
+() N
+(def) K
+( main\(\):) p n
+(    parser = argparse.ArgumentParser\(description=") S
+(Choose an example to train:) str
+("\)) p n
+(    parser.add_argument\(") S
+(runner) str
+(", type=Path,) p n
+(                        help=") S
+(Path to the runner file) str
+("\)) p n
+(    parser.add_argument\(") S
+(--model) str
+(", ") p
+(-m) str
+(", type=Path,) p n
+(                        nargs=') S
+(?) str
+(', help=") p
+(Path to the model directory) str
+("\)) p n
+() N
+(    argcomplete.autocomplete\(parser\)) N
+(    args = parser.parse_args\(\)) N
+() N
+(    runner = importlib.import_module\(f") S
+(runners.{args.runner.stem}) str
+("\)) p n
+(    runner.test\(args.model\)) N
+() N
+() N
+(if) K
+( __name__ == ") p
+(__main__) str
+(":) p n
+(    main\(\)) N
+(test.py) (Page 1/1) (Nov 04, 23 17:25) title
+border
+grestore
+(Printed by ) rhead
+() (Thursday November 30, 2023) (10/11) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (1) 11
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 4.703931 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(- Setup Virtual Enviroment \(Recommended\).) p n
+() N
+(- Install Requirements and Data with ``` ./setup ```) N
+(    - You may have to run ``` chmod +x ./setup ``` first.) N
+() N
+(- Train a model in the ``` ./runners ``` directory. e.g. ``` train.py ./runners/) N
+(classify_cifar10.py ```.) N
+(    - Change parameters in the ``` configs ``` directory \(or create your own\).) N
+() N
+(- Test the model. e.g. ``` test.py ./runners/classify_cifar10.py ```.) N
+() N
+(- View the results in ``` ./artifacts ```.) N
+() N
+(# Siren) N
+(Below is my result which was trained with ```./runners/siren_mlp.py```. The mode) N
+(l never actually stopped automatically and was instead stopped by my maximum ite) N
+(ration hyperparameter. It had a final loss of 0.0003 and would likely have conti) N
+(nued to decrease as shown by the red vertical line at the very end.) N
+() N
+(![Alt text]\(artifacts/siren_fit_image/siren_img_0.png\)) N
+() N
+(### Creative endeavers) N
+(I tested out the siren') S
+(s out of bounds abilities. This can be run by running ``` test.py ./runners/image_fit_c) str n
+(ard_f.py ``` The result is shown below.) N
+() N
+(![Alt text]\(artifacts/siren_fit_image/siren_img_out_of_bounds_f.png\)) N
+() N
+(I thought that looked pretty awful so I tried it again after training with this rainbow image to see if it would work better ) N
+(with something that has repeating patterns in one direction.) N
+() N
+(![Alt text]\(artifacts/siren_fit_image/siren_img_out_of_bounds_r.png\)) N
+() N
+(That also failed miserably but at least the colors match the theme. This can be a very overkill solution to getting a color ) N
+(palette from an image. It is at least good that it correctly displayed the picture in the middle. Since none of those coordi) N
+(nates were actually in the training set, it means the model is at least good at interpolating between points.) N
+() N
+(I spent a really long time trying to fit an stl file \(specifically the frog that was hidden around the school\), but I kept runn) N
+(ing out of memory. When I did it with a very low resolution version of the file it worked but the predicted mesh looked ) N
+(like a gobbly gook mess of vertices. The paper did something very similar so i know it) S
+('s possible, but I mus) p n
+(t have been doing something wrong :\() S
+(README.md) (Page 1/1) (Dec 01, 23 0:07) title
+border
+grestore
+(Printed by ) rhead
+() (11/11) (Thursday November 30, 2023) footer
 end % of iso1dict
 pagesave restore
 showpage

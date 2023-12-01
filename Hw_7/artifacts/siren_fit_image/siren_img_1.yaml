@@ -1,15 +1,18 @@
+data:
+  image_path: data/rainbow.jpg
 display:
   refresh_rate: 5
 learning:
   batch_size: 1
-  learning_patience: 200 
+  learning_patience: 15
   learning_rates:
   - 0.0005
   - 0.0001
-  - 0.00005
-  - 0.00001
-  num_iters: 2000 
+  - 5.0e-05
+  - 1.0e-05
+  num_iters: 1000
   weight_decay: 0.2
 siren:
-  num_hidden_layers: 10
   hidden_layer_width: 512
+  num_hidden_layers: 3
+  resolution: 256

@@ -6,11 +6,11 @@
     "configurations": [
 
         {
-            "name": "stl_fit_frog_model",
+            "name": "test image_fit_card_f",
             "type": "python",
             "request": "launch",
-            "program": "./train.py",
-            "args": ["./runners/stl_fit_frog_model.py"],
+            "program": "./test.py",
+            "args": ["./runners/image_fit_card_f.py"],
             "console": "integratedTerminal",
             "justMyCode": true
         },

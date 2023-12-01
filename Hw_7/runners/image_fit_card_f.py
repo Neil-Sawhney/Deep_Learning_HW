@@ -27,6 +27,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     num_hidden_layers = config["siren"]["num_hidden_layers"]
     hidden_layer_width = config["siren"]["hidden_layer_width"]
     siren_resolution = config["siren"]["resolution"]
+    image_path = config["data"]["image_path"]
 
     rng = tf.random.get_global_generator()
     rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
@@ -42,7 +43,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     )
 
     # Load the image
-    input_image = cv2.imread("data/TestCardF.jpg")
+    input_image = cv2.imread(image_path)
 
     # Resize the image
     resized_img = cv2.resize(input_image, (siren_resolution, siren_resolution))
@@ -63,7 +64,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
     # Reshape and concatenate x and y, and cast them to float32
     x_reshaped = x.reshape(-1, 1)
     y_reshaped = y.reshape(-1, 1)
-    img = tf.cast(tf.concat((x_reshaped, y_reshaped), 1), tf.float32)
+    pixel_coordinates = tf.cast(tf.concat((x_reshaped, y_reshaped), 1), tf.float32)
 
     used_patience = 0
     minimum_train_loss = np.inf
@@ -114,7 +115,7 @@ def train(config_path: Path, use_last_checkpoint: bool):
 
     for i in bar:
         with tf.GradientTape() as tape:
-            logits = siren(img)
+            logits = siren(pixel_coordinates)
 
             current_train_loss = tf.reduce_mean((logits - target) ** 2)
 
@@ -256,3 +257,98 @@ def train(config_path: Path, use_last_checkpoint: bool):
     checkpoint_manager.save()
     config_path = Path(f"artifacts/siren_fit_image/model/model.yaml")
     config_path.write_text(yaml.dump(config))
+
+
+def test(model_path: Path):
+    if model_path is None:
+        model_path = Path("artifacts/siren_fit_image/model")
+
+    if not model_path.exists():
+        print("Model does not exist, run the train script first")
+        return
+
+    config_path = Path("artifacts/siren_fit_image/model/model.yaml")
+
+    # HYPERPARAMETERS
+    config = yaml.safe_load(config_path.read_text())
+    num_hidden_layers = config["siren"]["num_hidden_layers"]
+    hidden_layer_width = config["siren"]["hidden_layer_width"]
+    siren_resolution = config["siren"]["resolution"]
+    image_path = config["data"]["image_path"]
+
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(0x43966E87BD57227011B5B03B58785EC1)
+    tf.random.set_seed(0x43966E87BD57227011B5B03B58785EC1)
+
+    siren = SirenMLP(
+        2,
+        3,
+        num_hidden_layers=num_hidden_layers,
+        hidden_layer_width=hidden_layer_width,
+        hidden_activation=tf.math.sin,
+        output_activation=tf.math.sin,
+    )
+
+    checkpoint = tf.train.Checkpoint(siren)
+    checkpoint.restore(tf.train.latest_checkpoint(model_path))
+
+    # Generate an out of bounds pixel coordinate
+    tmp = np.linspace(-1.5, 1.5, siren_resolution)
+
+    # Create a meshgrid for pixel coordinates
+    x, y = np.meshgrid(tmp, tmp)
+
+    # Reshape and concatenate x and y, and cast them to float32
+    x_reshaped = x.reshape(-1, 1)
+    y_reshaped = y.reshape(-1, 1)
+    pixel_coordinates = tf.cast(tf.concat((x_reshaped, y_reshaped), 1), tf.float32)
+
+    logits = siren(pixel_coordinates)
+
+    fig = plt.figure(figsize=(10, 5))
+
+    # Create a grid of 1 rows and 2 columns
+    grid = plt.GridSpec(1, 2, hspace=0.2, wspace=0.2)
+
+    # Use the grid to specify the location of each subplot
+    y_image_ax = fig.add_subplot(grid[0, 0])
+    x_image_ax = fig.add_subplot(grid[0, 1])
+
+    output_image = einops.rearrange(
+        logits.numpy(), "(h w) c -> h w c", h=siren_resolution, w=siren_resolution
+    )
+
+    # Load the image
+    input_image = cv2.imread(image_path)
+
+    # Downscale the input image then rescale it back up to make it a fair comparison
+    downscaled_input_image = cv2.resize(
+        input_image, (siren_resolution, siren_resolution)
+    )
+    rescaled_input_image = cv2.resize(
+        downscaled_input_image, (input_image.shape[1], input_image.shape[0])
+    )
+
+    y_image_ax.imshow(
+        cv2.cvtColor(rescaled_input_image, cv2.COLOR_BGR2RGB), interpolation="none"
+    )
+    y_image_ax.set_title("Ground Truth")
+    y_image_ax.axis("off")
+    # if the file already exists add a number to the end of the file name
+
+    # reshape output to input image shape
+    output_image = cv2.resize(
+        output_image, (input_image.shape[1], input_image.shape[0])
+    )
+
+    x_image_ax.imshow(
+        cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB), interpolation="none"
+    )
+    x_image_ax.set_title("Prediction")
+    x_image_ax.axis("off")
+
+    fig.suptitle("Siren - Card F: Out of Bounds Fitting")
+
+    plt.show()
+
+    fig.savefig(f"artifacts/siren_fit_image/siren_img_out_of_bounds.png")
